@@ -1,0 +1,181 @@
+/* ==========================================================================
+   🖨️ 모두의 수업 변환기 - A4 세로 인쇄 및 PDF 출력 전용 스타일시트
+   - 특수교육 친화적: 20px 이상의 큰 글씨, 명확한 테두리, 그림/이모지 중심
+   - 교사용 헤더/버튼/UI 숨김 및 활동지 양식 자동 재구성
+   ========================================================================== */
+
+@page {
+  size: A4 portrait;
+  margin: 15mm 15mm 15mm 15mm;
+}
+
+@media print {
+  /* 불필요한 UI 숨김 */
+  .app-header,
+  .accessibility-bar,
+  .nav-tabs,
+  .header-actions,
+  .btn,
+  .student-player-overlay,
+  .no-print,
+  .modal-overlay,
+  .card-header .btn-group {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 16pt !important;
+    line-height: 1.6 !important;
+  }
+
+  .main-wrapper {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* 인쇄용 학습지 컨테이너 */
+  .print-worksheet-wrapper {
+    display: block !important;
+    page-break-after: always;
+  }
+
+  .print-worksheet-header {
+    border-bottom: 2px solid #000;
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .print-title {
+    font-size: 22pt;
+    font-weight: bold;
+    color: #000;
+  }
+
+  .print-meta-table {
+    border-collapse: collapse;
+    font-size: 12pt;
+  }
+
+  .print-meta-table td {
+    border: 1px solid #444;
+    padding: 6px 14px;
+    text-align: center;
+  }
+
+  /* 문항 카드 */
+  .print-item-card {
+    border: 2px solid #333;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 24px;
+    page-break-inside: avoid;
+  }
+
+  .print-item-num {
+    font-size: 18pt;
+    font-weight: bold;
+    display: inline-block;
+    margin-right: 8px;
+  }
+
+  .print-item-instruction {
+    font-size: 16pt;
+    font-weight: bold;
+    margin-bottom: 14px;
+  }
+
+  /* A형 그림 선택 박스 */
+  .print-picture-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 12px;
+  }
+
+  .print-picture-box {
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .print-picture-icon {
+    font-size: 40pt;
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .print-picture-text {
+    font-size: 14pt;
+    font-weight: bold;
+  }
+
+  /* B형 낱말 선택 */
+  .print-word-options {
+    display: flex;
+    gap: 14px;
+    margin-top: 14px;
+    justify-content: center;
+  }
+
+  .print-word-pill {
+    border: 2px solid #000;
+    border-radius: 999px;
+    padding: 8px 24px;
+    font-size: 15pt;
+    font-weight: bold;
+  }
+
+  /* C형 문장 틀 */
+  .print-sentence-frame {
+    font-size: 18pt;
+    line-height: 2.2;
+    border: 2px dashed #444;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 14px 0;
+  }
+
+  .print-blank-line {
+    display: inline-block;
+    min-width: 160px;
+    border-bottom: 2px solid #000;
+    text-align: center;
+  }
+
+  /* D형 자유 표현 그리기 및 쓰기 칸 */
+  .print-free-write-box {
+    border: 2px solid #444;
+    border-radius: 12px;
+    height: 180px;
+    margin-top: 12px;
+    position: relative;
+  }
+
+  .print-draw-box {
+    border: 2px dashed #666;
+    border-radius: 12px;
+    height: 220px;
+    margin-top: 12px;
+    text-align: center;
+    color: #888;
+    padding-top: 80px;
+    font-size: 14pt;
+  }
+
+  /* 하단 평가 및 교사 지원 메모 */
+  .print-footer-eval {
+    margin-top: 30px;
+    border-top: 1px dashed #666;
+    padding-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 11pt;
+  }
+}

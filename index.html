@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>모두의 수업 변환기 - 초등 특수교육 AI 맞춤형 학습 플랫폼</title>
+  
+  <!-- 메타 태그 & SEO -->
+  <meta name="description" content="하나의 학습목표와 수업 내용을 초등 특수교육대상학생의 수준과 의사소통 방식에 맞춰 4가지 맞춤 학습활동(그림선택, 낱말선택, 문장완성, 자유표현)으로 변환하는 보편적 학습설계(UDL) 웹앱" />
+  <meta name="theme-color" content="#3b82f6" />
+
+  <!-- 스타일시트 로드 -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="print.css" media="print" />
+</head>
+<body class="font-size-medium">
+
+  <!-- ==========================================================================
+       1. 접근성 & 보조공학 도구 바 (Top Accessibility Bar)
+       ========================================================================== -->
+  <div class="accessibility-bar" role="region" aria-label="접근성 편의 도구">
+    <div class="access-container">
+      <span class="text-xs text-slate-500 font-bold">접근성 편의 도구:</span>
+      
+      <!-- 글자 크기 조절 (3단계) -->
+      <div class="inline-flex items-center gap-1">
+        <span class="sr-only">글자 크기:</span>
+        <button type="button" class="access-btn btn-font-size" data-size="normal" title="보통 글자 (16px)">가</button>
+        <button type="button" class="access-btn btn-font-size active" data-size="medium" title="큰 글자 (18px)">가+</button>
+        <button type="button" class="access-btn btn-font-size" data-size="large" title="아주 큰 글자 (22px)">가++</button>
+      </div>
+
+      <!-- 고대비 모드 토글 -->
+      <button type="button" id="btn-toggle-contrast" class="access-btn" title="고대비 흑백/노랑 모드 토글">
+        🌗 <span>고대비 모드</span>
+      </button>
+
+      <!-- 음소거 토글 -->
+      <button type="button" id="btn-toggle-mute" class="access-btn" title="음성 안내 및 효과음 끄기/켜기">
+        🔊 <span>소리 켬</span>
+      </button>
+
+      <!-- 학생 빠른 플레이어 시작 -->
+      <button type="button" class="access-btn" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd;" onclick="startStudentPlayer('A')" title="학생용 전체화면 모드 시작">
+        📱 <strong>학생 모드 실행</strong>
+      </button>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       2. 글로벌 헤더 (Brand & Nav Tabs)
+       ========================================================================== -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand-area" onclick="switchTab('home')">
+        <div class="brand-logo-badge">🌈</div>
+        <div class="brand-title-wrap">
+          <h1>모두의 수업 변환기</h1>
+          <div class="tagline">같은 목표, 다양한 배움, 모두의 참여 (UDL 특수교육 맞춤형)</div>
+        </div>
+      </div>
+
+      <nav class="header-actions" aria-label="메인 메뉴">
+        <div class="nav-tabs" role="tablist">
+          <button type="button" class="nav-tab-btn active" data-tab="home" role="tab">🏠 홈</button>
+          <button type="button" class="nav-tab-btn" data-tab="create" role="tab">✏️ 수업 만들기</button>
+          <button type="button" class="nav-tab-btn" data-tab="profiles" role="tab">👤 학생 맞춤 설정</button>
+          <button type="button" class="nav-tab-btn" data-tab="ai" role="tab">🪄 AI 활동 변환</button>
+          <button type="button" class="nav-tab-btn" data-tab="editor" role="tab">🛠️ 교사 편집</button>
+          <button type="button" class="nav-tab-btn" data-tab="results" role="tab">📊 학습 결과</button>
+          <button type="button" class="nav-tab-btn" data-tab="print" role="tab">🖨️ 학습지 출력</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       3. 메인 콘텐츠 영역 (Tab Views)
+       ========================================================================== -->
+  <main class="main-wrapper">
+
+    <!-- ------------------------------------------------------------------------
+         [화면 1] 홈 대시보드 (View: home)
+         ------------------------------------------------------------------------ -->
+    <section id="view-home" class="tab-view active" role="tabpanel">
+      <!-- 웰컴 배너 -->
+      <div class="card" style="background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 50%, #fefce8 100%); border-color: #bfdbfe;">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div>
+            <span class="badge bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold mb-2 inline-block">2022 개정 특수교육 교육과정 지원</span>
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-2">선생님의 하나의 수업이 모든 학생의 배움이 됩니다.</h2>
+            <p class="text-slate-600 text-sm max-w-2xl leading-relaxed">
+              학습목표와 수업 내용을 입력하면, 읽기 수준(그림/낱말/문장)과 의사소통 방식에 맞춘
+              <strong>4가지 맞춤형 학습활동(A·B·C·D형)</strong>으로 자동 변환됩니다.
+            </p>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <button class="btn btn-primary btn-lg" onclick="switchTab('create')">
+              ➕ 새 수업 만들기
+            </button>
+            <button class="btn btn-secondary btn-lg" onclick="switchTab('ai')">
+              🪄 데모 수업 바로 체험
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 빠른 상태 요약 카드 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div class="card p-5 border-l-8 border-blue-500">
+          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">등록된 맞춤 수업</div>
+          <div class="text-3xl font-extrabold text-blue-600" id="stat-lesson-count">0개</div>
+          <p class="text-xs text-slate-400 mt-2">초등 3학년 국어 데모 수업 포함</p>
+        </div>
+        <div class="card p-5 border-l-8 border-emerald-500">
+          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">등록된 학생 맞춤 프로필</div>
+          <div class="text-3xl font-extrabold text-emerald-600" id="stat-profile-count">0명</div>
+          <p class="text-xs text-slate-400 mt-2">익명 코드 기반 개별화 지원 설정</p>
+        </div>
+        <div class="card p-5 border-l-8 border-purple-500">
+          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">누적 학습 세션 기록</div>
+          <div class="text-3xl font-extrabold text-purple-600" id="stat-result-count">0회</div>
+          <p class="text-xs text-slate-400 mt-2">영구 데이터베이스에 안전하게 보관 중</p>
+        </div>
+      </div>
+
+      <!-- 저장된 수업 목록 -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="card-title">📚 내 수업 자료 목록</h3>
+            <p class="card-subtitle">저장된 수업을 선택하여 활동으로 변환하거나 학생에게 바로 실행할 수 있습니다.</p>
+          </div>
+          <button class="btn btn-sm btn-outline" onclick="switchTab('create')">
+            새 수업 추가
+          </button>
+        </div>
+        <div id="home-lesson-list" class="space-y-3">
+          <!-- JS 렌더링 영역 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 2] 수업 입력 화면 (View: create)
+         ------------------------------------------------------------------------ -->
+    <section id="view-create" class="tab-view" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title" id="create-screen-title">➕ 새 수업 만들기</h2>
+            <p class="card-subtitle">교과 진도에 맞춘 학습목표와 수업 내용을 입력하세요. UDL 변환 엔진이 맞춤형 활동을 생성합니다.</p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="renderCreateScreen(window.DEMO_LESSON)">
+            🔄 초등 3학년 국어 데모 불러오기
+          </button>
+        </div>
+
+        <form id="lesson-form">
+          <input type="hidden" id="input-lesson-id" value="" />
+
+          <div class="form-grid">
+            <!-- 수업 제목 -->
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label" for="input-lesson-title">
+                수업 제목 <span class="badge-req">필수</span>
+              </label>
+              <input type="text" id="input-lesson-title" class="form-input" placeholder="예: 내가 좋아하는 계절과 그 까닭" required />
+            </div>
+
+            <!-- 교육과정 -->
+            <div class="form-group">
+              <label class="form-label" for="input-lesson-curriculum">교육과정 구분</label>
+              <select id="input-lesson-curriculum" class="form-select">
+                <option value="공통 및 특수교육 기본 연계">공통 및 특수교육 기본 교육과정 연계</option>
+                <option value="특수교육 기본 교육과정">특수교육 기본 교육과정</option>
+                <option value="공통 교육과정">공통 교육과정</option>
+              </select>
+            </div>
+
+            <!-- 학년 -->
+            <div class="form-group">
+              <label class="form-label" for="input-lesson-grade">대상 학년</label>
+              <select id="input-lesson-grade" class="form-select">
+                <option value="초등 1학년">초등 1학년</option>
+                <option value="초등 2학년">초등 2학년</option>
+                <option value="초등 3학년" selected>초등 3학년 (기본 데모)</option>
+                <option value="초등 4학년">초등 4학년</option>
+                <option value="초등 5학년">초등 5학년</option>
+                <option value="초등 6학년">초등 6학년</option>
+              </select>
+            </div>
+
+            <!-- 교과 및 단원 -->
+            <div class="form-group">
+              <label class="form-label" for="input-lesson-subject">교과</label>
+              <select id="input-lesson-subject" class="form-select">
+                <option value="국어" selected>국어</option>
+                <option value="수학">수학</option>
+                <option value="사회">사회</option>
+                <option value="과학">과학</option>
+                <option value="안전한 생활">안전한 생활</option>
+                <option value="슬기로운 생활">슬기로운 생활</option>
+                <option value="창의적 체험활동">창의적 체험활동</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="input-lesson-unit">단원명</label>
+              <input type="text" id="input-lesson-unit" class="form-input" placeholder="예: 3. 생각을 나누어요" />
+            </div>
+          </div>
+
+          <!-- 학습목표 -->
+          <div class="form-group mb-4">
+            <label class="form-label" for="input-lesson-goal">
+              학습목표 <span class="badge-req">필수</span>
+            </label>
+            <input type="text" id="input-lesson-goal" class="form-input" placeholder="예: 자신의 생각과 그 까닭을 표현할 수 있다." required />
+            <span class="form-hint">※ 하나의 학습목표를 기준으로 네 가지 난이도의 활동이 도출됩니다.</span>
+          </div>
+
+          <!-- 수업 주제 -->
+          <div class="form-group mb-4">
+            <label class="form-label" for="input-lesson-topic">수업 핵심 주제</label>
+            <input type="text" id="input-lesson-topic" class="form-input" placeholder="예: 내가 좋아하는 계절과 그 까닭 이야기하기" />
+          </div>
+
+          <!-- 수업 내용 및 지문 -->
+          <div class="form-group mb-4">
+            <label class="form-label" for="input-lesson-content">수업 내용 및 지문</label>
+            <textarea id="input-lesson-content" class="form-textarea" rows="6" placeholder="수업에서 다룰 이야기, 지문, 설명 문장을 입력하세요."></textarea>
+          </div>
+
+          <!-- 핵심 어휘 -->
+          <div class="form-group mb-6">
+            <label class="form-label" for="input-lesson-keywords">핵심 어휘 (쉼표로 구분)</label>
+            <input type="text" id="input-lesson-keywords" class="form-input" placeholder="예: 봄, 여름, 가을, 겨울, 생각, 까닭, 꽃, 물놀이, 눈사람" />
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-4 border-t">
+            <button type="button" class="btn btn-secondary" onclick="switchTab('home')">취소</button>
+            <button type="submit" class="btn btn-primary btn-lg">
+              💾 저장하고 AI 맞춤 활동 변환하기
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 3] 학생 맞춤 설정 화면 (View: profiles)
+         ------------------------------------------------------------------------ -->
+    <section id="view-profiles" class="tab-view" role="tabpanel">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- 왼쪽: 새 프로필 등록 -->
+        <div class="card lg:col-span-1">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">👤 학생 맞춤 설정 등록</h3>
+              <p class="card-subtitle">익명 코드를 사용하여 학생의 읽기·의사소통 수준을 등록합니다.</p>
+            </div>
+          </div>
+
+          <form id="profile-form" class="space-y-4">
+            <div class="form-group">
+              <label class="form-label" for="prof-input-code">
+                학생 익명 코드 <span class="badge-req">필수</span>
+              </label>
+              <input type="text" id="prof-input-code" class="form-input" placeholder="예: 꿈나무-01, 사랑-02" required />
+              <span class="form-hint">개인정보 보호를 위해 실명 대신 식별 코드를 입력해 주세요.</span>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prof-input-reading">읽기 수준</label>
+              <select id="prof-input-reading" class="form-select">
+                <option value="그림 중심">그림 중심 (상징 및 비주얼 단서)</option>
+                <option value="낱말 수준" selected>낱말 수준 (낱말 카드 재인)</option>
+                <option value="짧은 문장">짧은 문장 (쉬운 어절/문장 읽기)</option>
+                <option value="문단 수준">문단 수준 (자립적 문단 읽기)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prof-input-comm">의사소통 방식</label>
+              <select id="prof-input-comm" class="form-select">
+                <option value="그림 선택">그림 선택 (AAC / 상징 터치)</option>
+                <option value="낱말 선택" selected>낱말 선택 (단어 카드 매칭)</option>
+                <option value="문장 완성">문장 완성 (문장 틀 채우기)</option>
+                <option value="음성 표현">음성 표현 (마이크 구어 표현)</option>
+                <option value="글쓰기">글쓰기 (자유 서술형)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prof-input-support">교사 지원 정도</label>
+              <select id="prof-input-support" class="form-select">
+                <option value="많은 지원">많은 지원 (전면적 촉구 및 모델링)</option>
+                <option value="부분적 지원" selected>부분적 지원 (언어적/시각적 단서)</option>
+                <option value="최소한의 지원">최소한의 지원 (간접 단서)</option>
+                <option value="독립 수행">독립 수행 (스스로 완료)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prof-input-choice-count">보기 선택지 개수</label>
+              <select id="prof-input-choice-count" class="form-select">
+                <option value="2">2지선다 (양자택일 - 부담 경감)</option>
+                <option value="3" selected>3지선다 (표준)</option>
+                <option value="4">4지선다 (도전적)</option>
+              </select>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t">
+              <label class="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-700">
+                <input type="checkbox" id="prof-input-hint" checked />
+                <span>도움 힌트 버튼 제공</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer text-sm font-bold text-slate-700">
+                <input type="checkbox" id="prof-input-tts" checked />
+                <span>문제 진입 시 음성(TTS) 자동 읽기</span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full mt-4">
+              ➕ 맞춤 프로필 저장
+            </button>
+          </form>
+        </div>
+
+        <!-- 오른쪽: 등록된 학생 프로필 목록 -->
+        <div class="card lg:col-span-2">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">👥 등록된 학생 개별화 프로필</h3>
+              <p class="card-subtitle">프로필을 선택하면 해당 학생의 특성에 맞춰 수업 활동의 난이도와 선택지 개수가 자동 조절됩니다.</p>
+            </div>
+          </div>
+          <div id="profiles-list-container">
+            <!-- JS 렌더링 영역 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 4] AI 활동 자동 변환 화면 (View: ai)
+         ------------------------------------------------------------------------ -->
+    <section id="view-ai" class="tab-view" role="tabpanel">
+      <div class="card">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b pb-4 mb-4">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="badge bg-blue-100 text-blue-700 text-xs px-2.5 py-0.5 rounded-full font-bold">현재 선택된 수업</span>
+              <h2 class="text-xl font-extrabold text-slate-800" id="ai-view-lesson-title">내가 좋아하는 계절과 그 까닭</h2>
+            </div>
+            <p class="text-sm text-slate-600" id="ai-view-lesson-goal">학습목표: 자신의 생각과 그 까닭을 표현할 수 있다.</p>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <div class="form-group m-0">
+              <select id="ai-target-student-select" class="form-select text-sm py-1.5" title="변환 기준 학생 선택">
+                <!-- 옵션 동적 주입 -->
+              </select>
+            </div>
+            <button class="btn btn-primary" onclick="triggerAIConversion()">
+              🪄 UDL 맞춤 변환 다시 실행
+            </button>
+          </div>
+        </div>
+
+        <!-- 변환 진행 상태 인디케이터 -->
+        <div id="ai-conversion-status" class="p-6 bg-blue-50 border-2 border-blue-200 rounded-2xl text-center mb-6" style="display:none;">
+          <div class="text-4xl animate-bounce mb-2">🤖</div>
+          <h3 class="text-lg font-bold text-blue-900 mb-1">보편적 학습설계(UDL)에 따라 4가지 맞춤 활동을 생성하고 있습니다...</h3>
+          <p class="text-xs text-blue-700">그림 선택형, 낱말 선택형, 문장 완성형, 자유 표현형 문항을 학생 눈높이에 맞게 구조화합니다.</p>
+        </div>
+
+        <!-- 생성된 4대 활동 카드 그리드 -->
+        <div id="ai-activities-container">
+          <!-- JS 렌더링 영역 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 5] 교사 편집 화면 (View: editor)
+         ------------------------------------------------------------------------ -->
+    <section id="view-editor" class="tab-view" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🛠️ 교사용 문항 검토 및 세부 편집</h2>
+            <p class="card-subtitle">AI가 생성한 문항을 교실 상황에 맞게 자유롭게 수정, 추가, 삭제하고 순서를 바꿀 수 있습니다.</p>
+          </div>
+        </div>
+
+        <!-- 유형 선택 서브 탭 -->
+        <div class="flex flex-wrap gap-2 mb-6 border-b pb-3">
+          <button class="btn btn-sm btn-secondary editor-type-tab active" data-type="A" onclick="openEditorForType('A')">
+            🔴 A형 – 그림 선택형
+          </button>
+          <button class="btn btn-sm btn-secondary editor-type-tab" data-type="B" onclick="openEditorForType('B')">
+            🟡 B형 – 낱말 선택형
+          </button>
+          <button class="btn btn-sm btn-secondary editor-type-tab" data-type="C" onclick="openEditorForType('C')">
+            🟣 C형 – 문장 완성형
+          </button>
+          <button class="btn btn-sm btn-secondary editor-type-tab" data-type="D" onclick="openEditorForType('D')">
+            🟢 D형 – 자유 표현형
+          </button>
+        </div>
+
+        <div id="editor-content-area">
+          <!-- JS 렌더링 영역 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 6] 학습 결과 화면 (View: results)
+         ------------------------------------------------------------------------ -->
+    <section id="view-results" class="tab-view" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📊 학생별 학습 수행 결과 및 성취도</h2>
+            <p class="card-subtitle">학생들의 활동 수행 내역, 정답률, 소요 시간, 교사 지원 정도를 한눈에 파악합니다.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-success" onclick="ResultModule.exportToCSV()">
+              📥 CSV 다운로드
+            </button>
+          </div>
+        </div>
+
+        <!-- 결과 요약 차트 -->
+        <div class="bg-slate-50 p-4 rounded-2xl border mb-6 flex flex-col items-center">
+          <h4 class="text-sm font-bold text-slate-700 mb-2">📈 활동 유형별 평균 정답률 (%)</h4>
+          <canvas id="results-summary-chart" style="max-width:100%; height:180px;"></canvas>
+        </div>
+
+        <!-- 결과 기록 테이블 -->
+        <div id="results-table-container">
+          <!-- JS 렌더링 영역 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 7] 학습자료 출력 화면 (View: print)
+         ------------------------------------------------------------------------ -->
+    <section id="view-print" class="tab-view" role="tabpanel">
+      <div class="card no-print">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">🖨️ A4 세로 인쇄 및 PDF 학습지 저장</h2>
+            <p class="card-subtitle">초등 특수교육용 큰 글씨와 그림 중심의 A4 인쇄용 활동지를 자동 구성합니다.</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-primary" onclick="PrintModule.triggerPrint()">
+              🖨️ 지금 인쇄하기 / PDF 저장
+            </button>
+          </div>
+        </div>
+
+        <!-- 출력할 유형 선택 -->
+        <div class="p-4 bg-slate-50 rounded-xl border mb-6 flex flex-wrap items-center gap-6">
+          <span class="text-xs font-bold text-slate-700">출력할 활동 유형 선택:</span>
+          <label class="flex items-center gap-1.5 text-sm font-bold cursor-pointer">
+            <input type="checkbox" id="print-chk-type-a" checked /> A형 (그림 선택)
+          </label>
+          <label class="flex items-center gap-1.5 text-sm font-bold cursor-pointer">
+            <input type="checkbox" id="print-chk-type-b" checked /> B형 (낱말 선택)
+          </label>
+          <label class="flex items-center gap-1.5 text-sm font-bold cursor-pointer">
+            <input type="checkbox" id="print-chk-type-c" checked /> C형 (문장 완성)
+          </label>
+          <label class="flex items-center gap-1.5 text-sm font-bold cursor-pointer">
+            <input type="checkbox" id="print-chk-type-d" checked /> D형 (자유 표현)
+          </label>
+        </div>
+      </div>
+
+      <!-- 실제 인쇄 미리보기 영역 -->
+      <div id="print-preview-container">
+        <!-- JS 렌더링 영역 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       4. 학생 전용 학습 뷰어 모달 (Student Player Overlay)
+       ========================================================================== -->
+  <div id="student-player-overlay" class="student-player-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="학생 학습 화면">
+    <!-- 학생 상단 바 -->
+    <header class="student-player-header">
+      <div class="flex items-center gap-3">
+        <button class="btn btn-sm btn-secondary" onclick="closeStudentPlayer()" title="교사 화면으로 돌아가기">
+          ✖️ 닫기
+        </button>
+        <div class="hidden sm:block">
+          <span class="text-xs font-bold text-slate-500">학생 코드:</span>
+          <select id="player-student-select" class="form-select text-xs py-1 px-2 border-slate-300">
+            <!-- 옵션 동적 주입 -->
+          </select>
+        </div>
+      </div>
+
+      <!-- 진행률 표시 바 -->
+      <div class="student-progress-bar-wrap">
+        <div id="player-progress-fill" class="student-progress-bar-fill"></div>
+      </div>
+      <div id="player-progress-text" class="text-sm font-extrabold text-blue-700">
+        1 / 3 단계
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button class="btn btn-sm btn-outline" onclick="togglePlayerHint()" title="힌트 보기">
+          💡 힌트
+        </button>
+        <button class="btn btn-sm btn-secondary" onclick="toggleMute()" title="소리 토글">
+          🔊
+        </button>
+      </div>
+    </header>
+
+    <!-- 학생 학습 메인 콘텐츠 -->
+    <main class="student-player-body" id="player-body-container">
+      <!-- 동적 렌더링 -->
+    </main>
+
+    <!-- 하단 이전/다음 내비게이션 -->
+    <footer class="student-player-footer">
+      <button id="player-btn-prev" class="btn btn-secondary btn-lg" onclick="playerPrevItem()">
+        ◀️ 이전 문제
+      </button>
+      <button id="player-btn-next" class="btn btn-primary btn-lg" onclick="playerNextItem()">
+        다음 문제 ▶️
+      </button>
+    </footer>
+  </div>
+
+  <!-- 스크립트 로드 순서: 데모데이터 -> DB -> 오디오 -> AI엔진 -> 메인앱 -->
+  <script src="demo_data.js"></script>
+  <script src="db.js"></script>
+  <script src="tts_audio.js"></script>
+  <script src="ai_engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

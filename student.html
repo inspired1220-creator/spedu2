@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>모두의 수업 - 학생 전용 학습관</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #fdfbf7;
+      overflow-x: hidden;
+    }
+    .student-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body class="font-size-large">
+
+  <div class="student-shell">
+    <!-- 학생 상단 내비게이션 -->
+    <header class="student-player-header">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🌈</span>
+        <span class="font-extrabold text-lg text-slate-800" id="header-lesson-title">수업 활동</span>
+      </div>
+
+      <!-- 진행률 표시 바 -->
+      <div class="student-progress-bar-wrap">
+        <div id="player-progress-fill" class="student-progress-bar-fill"></div>
+      </div>
+      <div id="player-progress-text" class="text-base font-extrabold text-blue-700">
+        1 / 3 단계
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline" onclick="togglePlayerHint()" title="힌트 보기">
+          💡 힌트
+        </button>
+        <button type="button" id="btn-toggle-mute" class="btn btn-sm btn-secondary" onclick="toggleMute()" title="소리 토글">
+          🔊
+        </button>
+      </div>
+    </header>
+
+    <!-- 메인 문제 영역 -->
+    <main class="student-player-body" id="player-body-container">
+      <!-- 동적 주입 -->
+    </main>
+
+    <!-- 하단 탐색 내비게이션 -->
+    <footer class="student-player-footer">
+      <button type="button" id="player-btn-prev" class="btn btn-secondary btn-lg" onclick="playerPrevItem()">
+        ◀️ 이전 문제
+      </button>
+      <button type="button" id="player-btn-next" class="btn btn-primary btn-lg" onclick="playerNextItem()">
+        다음 문제 ▶️
+      </button>
+    </footer>
+  </div>
+
+  <!-- 의존성 스크립트 -->
+  <script src="demo_data.js"></script>
+  <script src="db.js"></script>
+  <script src="tts_audio.js"></script>
+  <script src="ai_engine.js"></script>
+  <script src="app.js"></script>
+
+  <script>
+    // URL 파라미터 파싱 (?type=A&profile=profile_student_a)
+    window.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const typeChar = urlParams.get('type') || 'A';
+      const profId = urlParams.get('profile');
+
+      // 1초 후 자동 런칭
+      setTimeout(async () => {
+        if (profId) AppState.selectedProfileId = profId;
+        startStudentPlayer(typeChar);
+        // 독립 페이지이므로 오버레이 스타일 리셋
+        const overlay = document.getElementById('student-player-overlay');
+        if (overlay) overlay.style.display = 'none'; // 기본 인라인 렌더링 사용
+      }, 300);
+    });
+  </script>
+</body>
+</html>
