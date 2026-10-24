@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>모두의 수업 변환기 - 초등 특수교육 AI 맞춤형 학습 플랫폼</title>
+  <title>모두의 수업 변환기 - 2022 개정 교육과정 및 교과서 단원 연동 특수교육 맞춤형 플랫폼</title>
   
   <!-- 메타 태그 & SEO -->
-  <meta name="description" content="하나의 학습목표와 수업 내용을 초등 특수교육대상학생의 수준과 의사소통 방식에 맞춰 4가지 맞춤 학습활동(그림선택, 낱말선택, 문장완성, 자유표현)으로 변환하는 보편적 학습설계(UDL) 웹앱" />
+  <meta name="description" content="2022 개정 공통 및 특수교육 기본 교육과정 성취기준과 교과서 단원을 완벽 연동하여 초등 특수교육대상학생을 위한 4가지 UDL 맞춤 학습활동을 자동 생성하는 웹앱" />
   <meta name="theme-color" content="#3b82f6" />
 
   <!-- 스타일시트 로드 -->
@@ -56,7 +56,7 @@
         <div class="brand-logo-badge">🌈</div>
         <div class="brand-title-wrap">
           <h1>모두의 수업 변환기</h1>
-          <div class="tagline">같은 목표, 다양한 배움, 모두의 참여 (UDL 특수교육 맞춤형)</div>
+          <div class="tagline">2022 개정 교육과정 연동 | 같은 목표, 다양한 배움, 모두의 참여</div>
         </div>
       </div>
 
@@ -64,6 +64,7 @@
         <div class="nav-tabs" role="tablist">
           <button type="button" class="nav-tab-btn active" data-tab="home" role="tab">🏠 홈</button>
           <button type="button" class="nav-tab-btn" data-tab="create" role="tab">✏️ 수업 만들기</button>
+          <button type="button" class="nav-tab-btn" data-tab="curriculum" role="tab">📚 교육과정 관리</button>
           <button type="button" class="nav-tab-btn" data-tab="profiles" role="tab">👤 학생 맞춤 설정</button>
           <button type="button" class="nav-tab-btn" data-tab="ai" role="tab">🪄 AI 활동 변환</button>
           <button type="button" class="nav-tab-btn" data-tab="editor" role="tab">🛠️ 교사 편집</button>
@@ -87,40 +88,48 @@
       <div class="card" style="background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 50%, #fefce8 100%); border-color: #bfdbfe;">
         <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div>
-            <span class="badge bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold mb-2 inline-block">2022 개정 특수교육 교육과정 지원</span>
-            <h2 class="text-2xl font-extrabold text-slate-800 mb-2">선생님의 하나의 수업이 모든 학생의 배움이 됩니다.</h2>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="badge bg-blue-100 text-blue-800 text-xs px-3 py-1 rounded-full font-bold">2022 개정 공통 & 특수교육 기본 교육과정 공식 수록</span>
+              <span class="badge bg-emerald-100 text-emerald-800 text-xs px-3 py-1 rounded-full font-bold">교과서 단원 드롭다운 자동 연동</span>
+            </div>
+            <h2 class="text-2xl font-extrabold text-slate-800 mb-2">교육과정과 교과서 단원 선택만으로 맞춤 수업 완성!</h2>
             <p class="text-slate-600 text-sm max-w-2xl leading-relaxed">
-              학습목표와 수업 내용을 입력하면, 읽기 수준(그림/낱말/문장)과 의사소통 방식에 맞춘
-              <strong>4가지 맞춤형 학습활동(A·B·C·D형)</strong>으로 자동 변환됩니다.
+              교육부 및 국립특수교육원의 공식 2022 개정 성취기준과 교과서 단원을 드롭다운으로 선택하면,
+              학습목표와 본문이 자동 연동되고 <strong>4가지 UDL 맞춤형 활동(그림/낱말/문장/자유표현)</strong>으로 즉시 변환됩니다.
             </p>
           </div>
           <div class="flex flex-wrap gap-3">
             <button class="btn btn-primary btn-lg" onclick="switchTab('create')">
               ➕ 새 수업 만들기
             </button>
-            <button class="btn btn-secondary btn-lg" onclick="switchTab('ai')">
-              🪄 데모 수업 바로 체험
+            <button class="btn btn-secondary btn-lg" onclick="switchTab('curriculum')">
+              📚 교육과정 단원 탐색
             </button>
           </div>
         </div>
       </div>
 
       <!-- 빠른 상태 요약 카드 -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div class="card p-5 border-l-8 border-blue-500">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-4 border-l-6 border-blue-500">
           <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">등록된 맞춤 수업</div>
-          <div class="text-3xl font-extrabold text-blue-600" id="stat-lesson-count">0개</div>
-          <p class="text-xs text-slate-400 mt-2">초등 3학년 국어 데모 수업 포함</p>
+          <div class="text-2xl font-extrabold text-blue-600" id="stat-lesson-count">0개</div>
+          <p class="text-xs text-slate-400 mt-1">초등 3학년 국어 데모 포함</p>
         </div>
-        <div class="card p-5 border-l-8 border-emerald-500">
-          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">등록된 학생 맞춤 프로필</div>
-          <div class="text-3xl font-extrabold text-emerald-600" id="stat-profile-count">0명</div>
-          <p class="text-xs text-slate-400 mt-2">익명 코드 기반 개별화 지원 설정</p>
+        <div class="card p-4 border-l-6 border-indigo-500">
+          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">공식 수록 교과서 단원</div>
+          <div class="text-2xl font-extrabold text-indigo-600" id="stat-unit-count">0개</div>
+          <p class="text-xs text-slate-400 mt-1">2022 개정 국정/검인정 공식 매핑</p>
         </div>
-        <div class="card p-5 border-l-8 border-purple-500">
+        <div class="card p-4 border-l-6 border-emerald-500">
+          <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">학생 맞춤 프로필</div>
+          <div class="text-2xl font-extrabold text-emerald-600" id="stat-profile-count">0명</div>
+          <p class="text-xs text-slate-400 mt-1">익명 코드 기반 개별화 지원</p>
+        </div>
+        <div class="card p-4 border-l-6 border-purple-500">
           <div class="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">누적 학습 세션 기록</div>
-          <div class="text-3xl font-extrabold text-purple-600" id="stat-result-count">0회</div>
-          <p class="text-xs text-slate-400 mt-2">영구 데이터베이스에 안전하게 보관 중</p>
+          <div class="text-2xl font-extrabold text-purple-600" id="stat-result-count">0회</div>
+          <p class="text-xs text-slate-400 mt-1">IndexedDB 영구 데이터베이스</p>
         </div>
       </div>
 
@@ -142,20 +151,157 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 2] 수업 입력 화면 (View: create)
+         [화면 2] 수업 만들기 화면 (단계별 교육과정 드롭다운 연동)
          ------------------------------------------------------------------------ -->
     <section id="view-create" class="tab-view" role="tabpanel">
       <div class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title" id="create-screen-title">➕ 새 수업 만들기</h2>
-            <p class="card-subtitle">교과 진도에 맞춘 학습목표와 수업 내용을 입력하세요. UDL 변환 엔진이 맞춤형 활동을 생성합니다.</p>
+            <h2 class="card-title" id="create-screen-title">➕ 2022 개정 교육과정 기반 수업 만들기</h2>
+            <p class="card-subtitle">상위 항목을 선택하면 조건에 맞는 교과서와 단원, 성취기준이 자동으로 연동됩니다.</p>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="renderCreateScreen(window.DEMO_LESSON)">
-            🔄 초등 3학년 국어 데모 불러오기
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btn-toggle-input-mode" class="btn btn-outline btn-sm" onclick="toggleInputMode()">
+              ✍️ 수동 직접 입력 모드로 전환
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="renderCreateScreen(window.DEMO_LESSON)">
+              🔄 초등 3학년 국어 데모 로드
+            </button>
+          </div>
         </div>
 
+        <!-- ====================================================================
+             [A] 단계별 교육과정 & 교과서 단원 드롭다운 선택 패널
+             ==================================================================== -->
+        <div id="curriculum-selection-panel" class="p-5 bg-gradient-to-r from-blue-50/70 to-indigo-50/70 rounded-2xl border-2 border-blue-200 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-xl">🎯</span>
+              <h3 class="font-extrabold text-blue-950 text-base">단계별 교육과정 & 교과서 단원 선택</h3>
+            </div>
+            <span class="text-xs text-blue-700 bg-blue-100/80 px-2.5 py-1 rounded-full font-bold">
+              상위 항목 선택 시 하위 목록이 자동 필터링됩니다
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+            <!-- 1. 교육과정 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-curriculum">① 교육과정 구분 <span class="badge-req">필수</span></label>
+              <select id="sel-curriculum" class="form-select text-sm py-2">
+                <option value="2022 개정 공통 교육과정" selected>2022 개정 공통 교육과정</option>
+                <option value="2022 개정 특수교육 기본 교육과정">2022 개정 특수교육 기본 교육과정</option>
+              </select>
+            </div>
+
+            <!-- 2. 학교급 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-school-level">② 학교급</label>
+              <select id="sel-school-level" class="form-select text-sm py-2">
+                <option value="초등학교" selected>초등학교</option>
+              </select>
+            </div>
+
+            <!-- 3. 학년군 / 학년 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-grade">③ 학년 선택 <span class="badge-req">필수</span></label>
+              <select id="sel-grade" class="form-select text-sm py-2">
+                <option value="초등 3학년" selected>초등 3학년 (3~4학년군)</option>
+                <option value="초등 1학년">초등 1학년 (1~2학년군)</option>
+                <option value="초등 2학년">초등 2학년 (1~2학년군)</option>
+                <option value="초등 4학년">초등 4학년 (3~4학년군)</option>
+                <option value="초등 5학년">초등 5학년 (5~6학년군)</option>
+                <option value="초등 6학년">초등 6학년 (5~6학년군)</option>
+              </select>
+            </div>
+
+            <!-- 4. 교과 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-subject">④ 교과 선택 <span class="badge-req">필수</span></label>
+              <select id="sel-subject" class="form-select text-sm py-2">
+                <option value="국어" selected>국어</option>
+                <option value="수학">수학</option>
+                <option value="사회">사회</option>
+                <option value="과학">과학</option>
+                <option value="도덕">도덕</option>
+                <option value="안전한 생활">안전한 생활</option>
+                <option value="슬기로운 생활">슬기로운 생활</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <!-- 5. 교과서 / 출판사 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-publisher">⑤ 교과서 (출판사)</label>
+              <select id="sel-publisher" class="form-select text-sm py-2">
+                <!-- 동적 채움 -->
+              </select>
+            </div>
+
+            <!-- 6. 학기 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-semester">⑥ 학기</label>
+              <select id="sel-semester" class="form-select text-sm py-2">
+                <option value="1학기" selected>1학기</option>
+                <option value="2학기">2학기</option>
+              </select>
+            </div>
+
+            <!-- 7. 단원명 드롭다운 -->
+            <div class="form-group">
+              <label class="form-label text-xs" for="sel-unit">⑦ 단원명 선택 <span class="badge-req">필수</span></label>
+              <select id="sel-unit" class="form-select text-sm py-2 font-bold text-blue-900 border-blue-400">
+                <!-- 조건에 맞는 단원 동적 채움 -->
+              </select>
+            </div>
+          </div>
+
+          <!-- 단원 선택 시 자동 연동되는 상세 정보 및 성취기준 패널 -->
+          <div id="unit-autofill-preview" class="p-4 bg-white rounded-xl border border-blue-200 shadow-sm mt-3">
+            <div class="flex items-center justify-between mb-3 border-b pb-2">
+              <div class="flex items-center gap-2">
+                <span id="unit-source-badge" class="badge bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-extrabold">
+                  🏛️ 교육부 공식 검증 자료
+                </span>
+                <span id="unit-source-detail" class="text-xs text-slate-500">
+                  출처: 교육부 고시 제2022-33호 [별책 5]
+                </span>
+              </div>
+              <button type="button" class="btn btn-sm btn-primary" onclick="applySelectedUnitToForm()" title="선택한 단원의 내용과 성취기준을 아래 수업 양식에 적용">
+                ⬇️ 이 단원 내용 적용하기
+              </button>
+            </div>
+
+            <!-- 연계 성취기준 체크박스 목록 -->
+            <div class="mb-3">
+              <div class="text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
+                <span>📋 이 단원과 연계된 2022 개정 성취기준 (복수 선택 가능):</span>
+                <span class="text-slate-400 font-normal">체크된 성취기준이 수업에 반영됩니다</span>
+              </div>
+              <div id="unit-linked-standards-list" class="space-y-1.5 max-h-48 overflow-y-auto p-2 bg-slate-50 rounded-lg border">
+                <!-- 동적 체크박스 렌더링 -->
+              </div>
+            </div>
+
+            <!-- 성취기준 기반 추천 학습목표 카드 -->
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-lg flex items-start justify-between gap-3">
+              <div>
+                <span class="text-xs font-extrabold text-amber-800 block mb-0.5">💡 성취기준 기반 추천 학습목표:</span>
+                <p id="suggested-goal-text" class="text-sm font-bold text-slate-800">
+                  자신의 생각과 그 까닭을 알맞은 낱말과 문장으로 표현할 수 있다.
+                </p>
+              </div>
+              <button type="button" class="btn btn-sm btn-outline text-xs whitespace-nowrap" onclick="useSuggestedGoal()">
+                이 목표 사용
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================================================================
+             [B] 수업 세부 입력 폼 (단원 선택 시 자동 채워지며 교사 자유 수정 가능)
+             ==================================================================== -->
         <form id="lesson-form">
           <input type="hidden" id="input-lesson-id" value="" />
 
@@ -165,62 +311,49 @@
               <label class="form-label" for="input-lesson-title">
                 수업 제목 <span class="badge-req">필수</span>
               </label>
-              <input type="text" id="input-lesson-title" class="form-input" placeholder="예: 내가 좋아하는 계절과 그 까닭" required />
+              <input type="text" id="input-lesson-title" class="form-input font-bold" placeholder="예: 내가 좋아하는 계절과 그 까닭" required />
             </div>
 
-            <!-- 교육과정 -->
+            <!-- 교육과정 & 학년 & 교과 표시 -->
             <div class="form-group">
-              <label class="form-label" for="input-lesson-curriculum">교육과정 구분</label>
-              <select id="input-lesson-curriculum" class="form-select">
-                <option value="공통 및 특수교육 기본 연계">공통 및 특수교육 기본 교육과정 연계</option>
-                <option value="특수교육 기본 교육과정">특수교육 기본 교육과정</option>
-                <option value="공통 교육과정">공통 교육과정</option>
-              </select>
+              <label class="form-label" for="input-lesson-curriculum">교육과정</label>
+              <input type="text" id="input-lesson-curriculum" class="form-input text-sm" value="2022 개정 공통 교육과정" readonly />
             </div>
 
-            <!-- 학년 -->
             <div class="form-group">
               <label class="form-label" for="input-lesson-grade">대상 학년</label>
-              <select id="input-lesson-grade" class="form-select">
-                <option value="초등 1학년">초등 1학년</option>
-                <option value="초등 2학년">초등 2학년</option>
-                <option value="초등 3학년" selected>초등 3학년 (기본 데모)</option>
-                <option value="초등 4학년">초등 4학년</option>
-                <option value="초등 5학년">초등 5학년</option>
-                <option value="초등 6학년">초등 6학년</option>
-              </select>
+              <input type="text" id="input-lesson-grade" class="form-input text-sm" value="초등 3학년" readonly />
             </div>
 
-            <!-- 교과 및 단원 -->
             <div class="form-group">
               <label class="form-label" for="input-lesson-subject">교과</label>
-              <select id="input-lesson-subject" class="form-select">
-                <option value="국어" selected>국어</option>
-                <option value="수학">수학</option>
-                <option value="사회">사회</option>
-                <option value="과학">과학</option>
-                <option value="안전한 생활">안전한 생활</option>
-                <option value="슬기로운 생활">슬기로운 생활</option>
-                <option value="창의적 체험활동">창의적 체험활동</option>
-              </select>
+              <input type="text" id="input-lesson-subject" class="form-input text-sm" value="국어" readonly />
             </div>
 
             <div class="form-group">
               <label class="form-label" for="input-lesson-unit">단원명</label>
-              <input type="text" id="input-lesson-unit" class="form-input" placeholder="예: 3. 생각을 나누어요" />
+              <input type="text" id="input-lesson-unit" class="form-input text-sm font-bold" value="3. 생각을 나누어요" />
             </div>
           </div>
 
-          <!-- 학습목표 -->
+          <!-- 연계 성취기준 원문 (교사 확인 및 편집) -->
+          <div class="form-group mb-4">
+            <label class="form-label" for="input-lesson-standards">
+              연계 2022 개정 성취기준 (코드 및 원문)
+            </label>
+            <textarea id="input-lesson-standards" class="form-textarea text-xs bg-slate-50 font-mono" rows="2" placeholder="[4국01-03] 자신의 생각과 그 까닭을 표현한다."></textarea>
+          </div>
+
+          <!-- 학습목표 (자유 수정 가능) -->
           <div class="form-group mb-4">
             <label class="form-label" for="input-lesson-goal">
               학습목표 <span class="badge-req">필수</span>
             </label>
-            <input type="text" id="input-lesson-goal" class="form-input" placeholder="예: 자신의 생각과 그 까닭을 표현할 수 있다." required />
-            <span class="form-hint">※ 하나의 학습목표를 기준으로 네 가지 난이도의 활동이 도출됩니다.</span>
+            <input type="text" id="input-lesson-goal" class="form-input text-base font-bold text-blue-900" placeholder="예: 자신의 생각과 그 까닭을 표현할 수 있다." required />
+            <span class="form-hint">※ 단원 선택 시 자동 채워진 학습목표를 학생 수준에 맞게 자유롭게 수정할 수 있습니다.</span>
           </div>
 
-          <!-- 수업 주제 -->
+          <!-- 수업 핵심 주제 -->
           <div class="form-group mb-4">
             <label class="form-label" for="input-lesson-topic">수업 핵심 주제</label>
             <input type="text" id="input-lesson-topic" class="form-input" placeholder="예: 내가 좋아하는 계절과 그 까닭 이야기하기" />
@@ -238,10 +371,10 @@
             <input type="text" id="input-lesson-keywords" class="form-input" placeholder="예: 봄, 여름, 가을, 겨울, 생각, 까닭, 꽃, 물놀이, 눈사람" />
           </div>
 
-          <div class="flex items-center justify-end gap-3 pt-4 border-t">
+          <div class="flex items-center justify-between pt-4 border-t">
             <button type="button" class="btn btn-secondary" onclick="switchTab('home')">취소</button>
             <button type="submit" class="btn btn-primary btn-lg">
-              💾 저장하고 AI 맞춤 활동 변환하기
+              💾 저장하고 AI 맞춤 활동 4종 변환하기
             </button>
           </div>
         </form>
@@ -249,7 +382,63 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 3] 학생 맞춤 설정 화면 (View: profiles)
+         [화면 3] 교육과정 데이터 관리 화면 (View: curriculum)
+         ------------------------------------------------------------------------ -->
+    <section id="view-curriculum" class="tab-view" role="tabpanel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">📚 2022 개정 교육과정 및 교과서 단원 데이터 관리</h2>
+            <p class="card-subtitle">
+              교육부 및 국립특수교육원 공식 검증 자료를 열람하고, 교사가 직접 새 교과서 단원을 CSV로 등록하거나 관리할 수 있습니다.
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-outline" onclick="CurriculumManager.downloadSampleCSV()">
+              📄 CSV 양식 다운로드
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="CurriculumManager.exportAllCurriculumCSV()">
+              📥 전체 단원 CSV 내보내기
+            </button>
+            <label class="btn btn-sm btn-success cursor-pointer">
+              📤 CSV 파일 업로드
+              <input type="file" id="curriculum-csv-file" accept=".csv" class="sr-only" onchange="CurriculumManager.handleCSVUpload(event)" />
+            </label>
+          </div>
+        </div>
+
+        <!-- 필터 및 검색 바 -->
+        <div class="p-4 bg-slate-50 rounded-xl border mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3">
+            <span class="text-xs font-bold text-slate-700">자료 구분:</span>
+            <select id="curriculum-filter-type" class="form-select text-xs py-1 px-3" onchange="CurriculumManager.renderCurriculumTable()">
+              <option value="all">전체 (공식 + 사용자 등록)</option>
+              <option value="official">🏛️ 공식 검증 자료만</option>
+              <option value="user">👤 사용자 등록 자료만</option>
+            </select>
+
+            <span class="text-xs font-bold text-slate-700 ml-2">교육과정:</span>
+            <select id="curriculum-filter-curri" class="form-select text-xs py-1 px-3" onchange="CurriculumManager.renderCurriculumTable()">
+              <option value="all">전체 교육과정</option>
+              <option value="2022 개정 공통 교육과정">2022 개정 공통 교육과정</option>
+              <option value="2022 개정 특수교육 기본 교육과정">2022 개정 특수교육 기본 교육과정</option>
+            </select>
+          </div>
+
+          <div class="text-xs text-slate-500 font-bold" id="curriculum-total-count">
+            총 0개 단원 등록됨
+          </div>
+        </div>
+
+        <!-- 단원 목록 테이블 -->
+        <div id="curriculum-table-container">
+          <!-- JS 렌더링 영역 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------------------------------
+         [화면 4] 학생 맞춤 설정 화면 (View: profiles)
          ------------------------------------------------------------------------ -->
     <section id="view-profiles" class="tab-view" role="tabpanel">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -344,7 +533,7 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 4] AI 활동 자동 변환 화면 (View: ai)
+         [화면 5] AI 활동 자동 변환 화면 (View: ai)
          ------------------------------------------------------------------------ -->
     <section id="view-ai" class="tab-view" role="tabpanel">
       <div class="card">
@@ -384,7 +573,7 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 5] 교사 편집 화면 (View: editor)
+         [화면 6] 교사 편집 화면 (View: editor)
          ------------------------------------------------------------------------ -->
     <section id="view-editor" class="tab-view" role="tabpanel">
       <div class="card">
@@ -418,7 +607,7 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 6] 학습 결과 화면 (View: results)
+         [화면 7] 학습 결과 화면 (View: results)
          ------------------------------------------------------------------------ -->
     <section id="view-results" class="tab-view" role="tabpanel">
       <div class="card">
@@ -448,7 +637,7 @@
     </section>
 
     <!-- ------------------------------------------------------------------------
-         [화면 7] 학습자료 출력 화면 (View: print)
+         [화면 8] 학습자료 출력 화면 (View: print)
          ------------------------------------------------------------------------ -->
     <section id="view-print" class="tab-view" role="tabpanel">
       <div class="card no-print">
@@ -494,7 +683,6 @@
        4. 학생 전용 학습 뷰어 모달 (Student Player Overlay)
        ========================================================================== -->
   <div id="student-player-overlay" class="student-player-overlay" style="display:none;" role="dialog" aria-modal="true" aria-label="학생 학습 화면">
-    <!-- 학생 상단 바 -->
     <header class="student-player-header">
       <div class="flex items-center gap-3">
         <button class="btn btn-sm btn-secondary" onclick="closeStudentPlayer()" title="교사 화면으로 돌아가기">
@@ -508,7 +696,6 @@
         </div>
       </div>
 
-      <!-- 진행률 표시 바 -->
       <div class="student-progress-bar-wrap">
         <div id="player-progress-fill" class="student-progress-bar-fill"></div>
       </div>
@@ -526,12 +713,10 @@
       </div>
     </header>
 
-    <!-- 학생 학습 메인 콘텐츠 -->
     <main class="student-player-body" id="player-body-container">
       <!-- 동적 렌더링 -->
     </main>
 
-    <!-- 하단 이전/다음 내비게이션 -->
     <footer class="student-player-footer">
       <button id="player-btn-prev" class="btn btn-secondary btn-lg" onclick="playerPrevItem()">
         ◀️ 이전 문제
@@ -542,7 +727,8 @@
     </footer>
   </div>
 
-  <!-- 스크립트 로드 순서: 데모데이터 -> DB -> 오디오 -> AI엔진 -> 메인앱 -->
+  <!-- 스크립트 로드 순서: 교육과정데이터 -> 데모데이터 -> DB -> 오디오 -> AI엔진 -> 메인앱 -->
+  <script src="curriculum_data.js"></script>
   <script src="demo_data.js"></script>
   <script src="db.js"></script>
   <script src="tts_audio.js"></script>

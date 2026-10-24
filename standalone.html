@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>모두의 수업 변환기 (단일 파일 독립 실행 버전) - 초등 특수교육 AI 맞춤형 학습 플랫폼</title>
+  <title>모두의 수업 변환기 (2022 개정 교육과정 연동 통합 단일 파일 버전)</title>
   
   <!-- Pretendard 웹 폰트 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -175,7 +175,6 @@ body {
 .feedback-overlay.correct { background: #dcfce7; color: #166534; border: 2px solid #86efac; }
 .feedback-overlay.incorrect { background: #fee2e2; color: #991b1b; border: 2px solid #fca5a5; }
 
-/* 인쇄 스타일 */
 @media print {
   .app-header, .accessibility-bar, .nav-tabs, .header-actions, .btn, .student-player-overlay, .no-print { display: none !important; }
   body { background: #ffffff !important; color: #000000 !important; font-size: 16pt !important; }
@@ -221,13 +220,14 @@ body {
         <div class="brand-logo-badge">🌈</div>
         <div class="brand-title-wrap">
           <h1>모두의 수업 변환기</h1>
-          <div class="tagline">같은 목표, 다양한 배움, 모두의 참여 (단일 파일 배포용)</div>
+          <div class="tagline">2022 개정 교육과정 연동 (단일 파일 배포용 완전체)</div>
         </div>
       </div>
       <nav class="header-actions">
         <div class="nav-tabs" role="tablist">
           <button type="button" class="nav-tab-btn active" data-tab="home" onclick="switchTab('home')">🏠 홈</button>
           <button type="button" class="nav-tab-btn" data-tab="create" onclick="switchTab('create')">✏️ 수업 만들기</button>
+          <button type="button" class="nav-tab-btn" data-tab="curriculum" onclick="switchTab('curriculum')">📚 교육과정 관리</button>
           <button type="button" class="nav-tab-btn" data-tab="profiles" onclick="switchTab('profiles')">👤 학생 맞춤 설정</button>
           <button type="button" class="nav-tab-btn" data-tab="ai" onclick="switchTab('ai')">🪄 AI 활동 변환</button>
           <button type="button" class="nav-tab-btn" data-tab="editor" onclick="switchTab('editor')">🛠️ 교사 편집</button>
@@ -245,11 +245,11 @@ body {
       <div class="card" style="background: linear-gradient(135deg, #eff6ff 0%, #fdf2f8 50%, #fefce8 100%); border-color: #bfdbfe;">
         <h2 class="text-2xl font-extrabold text-slate-800 mb-2">선생님의 하나의 수업이 모든 학생의 배움이 됩니다.</h2>
         <p class="text-slate-600 text-sm mb-4">
-          학습목표와 수업 내용을 입력하면 읽기 수준과 의사소통 방식에 맞춘 4가지 맞춤형 학습활동(A·B·C·D형)으로 자동 변환됩니다.
+          2022 개정 공통 및 특수교육 기본 교육과정 성취기준과 교과서 단원을 드롭다운으로 선택하여 4가지 UDL 맞춤 활동을 즉시 제작하세요.
         </p>
         <div class="flex gap-3">
           <button class="btn btn-primary" onclick="switchTab('create')">➕ 새 수업 만들기</button>
-          <button class="btn btn-secondary" onclick="switchTab('ai')">🪄 데모 수업 바로 체험</button>
+          <button class="btn btn-secondary" onclick="switchTab('curriculum')">📚 교육과정 단원 탐색</button>
         </div>
       </div>
       <div class="card">
@@ -260,33 +260,42 @@ body {
       </div>
     </section>
 
-    <!-- 2. 수업 만들기 -->
+    <!-- 2. 수업 만들기 (단계별 드롭다운) -->
     <section id="view-create" class="tab-view">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title" id="create-screen-title">➕ 새 수업 만들기</h2>
-          <button type="button" class="btn btn-secondary btn-sm" onclick="renderCreateScreen(window.DEMO_LESSON)">
-            🔄 초등 3학년 국어 데모 불러오기
-          </button>
+          <h2 class="card-title" id="create-screen-title">➕ 2022 개정 교육과정 기반 수업 만들기</h2>
+          <div class="flex gap-2">
+            <button type="button" id="btn-toggle-input-mode" class="btn btn-outline btn-sm" onclick="toggleInputMode()">
+              ✍️ 수동 직접 입력 모드로 전환
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="renderCreateScreen(window.DEMO_LESSON)">
+              🔄 초등 3학년 국어 데모 로드
+            </button>
+          </div>
         </div>
-        <form id="lesson-form" onsubmit="handleLessonFormSubmit(event)">
-          <input type="hidden" id="input-lesson-id" value="" />
-          <div class="form-grid">
-            <div class="form-group" style="grid-column: 1 / -1;">
-              <label class="form-label">수업 제목 <span class="badge-req">필수</span></label>
-              <input type="text" id="input-lesson-title" class="form-input" placeholder="예: 내가 좋아하는 계절과 그 까닭" required />
-            </div>
+
+        <!-- 단계별 드롭다운 패널 -->
+        <div id="curriculum-selection-panel" class="p-5 bg-blue-50/70 rounded-2xl border-2 border-blue-200 mb-6">
+          <h3 class="font-extrabold text-blue-950 text-base mb-3">🎯 단계별 교육과정 & 교과서 단원 선택</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
             <div class="form-group">
-              <label class="form-label">교육과정</label>
-              <select id="input-lesson-curriculum" class="form-select">
-                <option value="공통 및 특수교육 기본 연계">공통 및 특수교육 기본 연계</option>
-                <option value="특수교육 기본 교육과정">특수교육 기본 교육과정</option>
+              <label class="form-label text-xs">① 교육과정 구분</label>
+              <select id="sel-curriculum" class="form-select text-sm py-2">
+                <option value="2022 개정 공통 교육과정" selected>2022 개정 공통 교육과정</option>
+                <option value="2022 개정 특수교육 기본 교육과정">2022 개정 특수교육 기본 교육과정</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">대상 학년</label>
-              <select id="input-lesson-grade" class="form-select">
-                <option value="초등 3학년" selected>초등 3학년</option>
+              <label class="form-label text-xs">② 학교급</label>
+              <select id="sel-school-level" class="form-select text-sm py-2">
+                <option value="초등학교" selected>초등학교</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">③ 학년 선택</label>
+              <select id="sel-grade" class="form-select text-sm py-2">
+                <option value="초등 3학년" selected>초등 3학년 (3~4학년군)</option>
                 <option value="초등 1학년">초등 1학년</option>
                 <option value="초등 2학년">초등 2학년</option>
                 <option value="초등 4학년">초등 4학년</option>
@@ -295,17 +304,83 @@ body {
               </select>
             </div>
             <div class="form-group">
+              <label class="form-label text-xs">④ 교과 선택</label>
+              <select id="sel-subject" class="form-select text-sm py-2">
+                <option value="국어" selected>국어</option>
+                <option value="수학">수학</option>
+                <option value="사회">사회</option>
+                <option value="과학">과학</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            <div class="form-group">
+              <label class="form-label text-xs">⑤ 교과서 (출판사)</label>
+              <select id="sel-publisher" class="form-select text-sm py-2"></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">⑥ 학기</label>
+              <select id="sel-semester" class="form-select text-sm py-2">
+                <option value="1학기" selected>1학기</option>
+                <option value="2학기">2학기</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label text-xs">⑦ 단원명 선택</label>
+              <select id="sel-unit" class="form-select text-sm py-2 font-bold text-blue-900 border-blue-400"></select>
+            </div>
+          </div>
+
+          <!-- 자동 연동 정보 및 성취기준 미리보기 -->
+          <div id="unit-autofill-preview" class="p-4 bg-white rounded-xl border border-blue-200 mt-2">
+            <div class="flex items-center justify-between mb-2">
+              <span id="unit-source-badge" class="badge bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold">
+                🏛️ 교육부 공식 검증 자료
+              </span>
+              <button type="button" class="btn btn-sm btn-primary" onclick="applySelectedUnitToForm()">
+                ⬇️ 이 단원 내용 적용하기
+              </button>
+            </div>
+            <div class="text-xs font-bold text-slate-700 mb-1">📋 연계 2022 성취기준 (복수 선택):</div>
+            <div id="unit-linked-standards-list" class="space-y-1 max-h-36 overflow-y-auto p-2 bg-slate-50 rounded border mb-2"></div>
+            <div class="p-2.5 bg-amber-50 rounded border flex items-center justify-between gap-2">
+              <div class="text-xs font-bold text-slate-800" id="suggested-goal-text">추천 학습목표</div>
+              <button type="button" class="btn btn-sm btn-outline text-xs whitespace-nowrap" onclick="useSuggestedGoal()">이 목표 사용</button>
+            </div>
+          </div>
+        </div>
+
+        <form id="lesson-form" onsubmit="handleLessonFormSubmit(event)">
+          <input type="hidden" id="input-lesson-id" value="" />
+          <div class="form-grid">
+            <div class="form-group" style="grid-column: 1 / -1;">
+              <label class="form-label">수업 제목 <span class="badge-req">필수</span></label>
+              <input type="text" id="input-lesson-title" class="form-input font-bold" placeholder="예: 내가 좋아하는 계절과 그 까닭" required />
+            </div>
+            <div class="form-group">
+              <label class="form-label">교육과정</label>
+              <input type="text" id="input-lesson-curriculum" class="form-input text-sm" value="2022 개정 공통 교육과정" readonly />
+            </div>
+            <div class="form-group">
+              <label class="form-label">대상 학년</label>
+              <input type="text" id="input-lesson-grade" class="form-input text-sm" value="초등 3학년" readonly />
+            </div>
+            <div class="form-group">
               <label class="form-label">교과</label>
-              <input type="text" id="input-lesson-subject" class="form-input" value="국어" />
+              <input type="text" id="input-lesson-subject" class="form-input text-sm" value="국어" readonly />
             </div>
             <div class="form-group">
               <label class="form-label">단원명</label>
-              <input type="text" id="input-lesson-unit" class="form-input" value="3. 생각을 나누어요" />
+              <input type="text" id="input-lesson-unit" class="form-input text-sm font-bold" value="3. 생각을 나누어요" />
             </div>
           </div>
           <div class="form-group mb-4">
+            <label class="form-label">연계 성취기준</label>
+            <textarea id="input-lesson-standards" class="form-textarea text-xs bg-slate-50" rows="2"></textarea>
+          </div>
+          <div class="form-group mb-4">
             <label class="form-label">학습목표 <span class="badge-req">필수</span></label>
-            <input type="text" id="input-lesson-goal" class="form-input" value="자신의 생각과 그 까닭을 표현할 수 있다." required />
+            <input type="text" id="input-lesson-goal" class="form-input text-base font-bold text-blue-900" value="자신의 생각과 그 까닭을 표현할 수 있다." required />
           </div>
           <div class="form-group mb-4">
             <label class="form-label">수업 핵심 주제</label>
@@ -313,20 +388,38 @@ body {
           </div>
           <div class="form-group mb-4">
             <label class="form-label">수업 내용 및 지문</label>
-            <textarea id="input-lesson-content" class="form-textarea" rows="5">봄에는 꽃이 피고, 여름에는 물놀이를 합니다. 가을에는 단풍이 들고, 겨울에는 눈사람을 만듭니다. 좋아하는 계절과 그 까닭을 이야기해 봅시다.</textarea>
+            <textarea id="input-lesson-content" class="form-textarea" rows="5"></textarea>
           </div>
           <div class="form-group mb-6">
             <label class="form-label">핵심 어휘</label>
             <input type="text" id="input-lesson-keywords" class="form-input" value="봄, 여름, 가을, 겨울, 생각, 까닭, 꽃, 눈사람" />
           </div>
           <div class="flex justify-end gap-3 pt-4 border-t">
-            <button type="submit" class="btn btn-primary btn-lg">💾 저장하고 AI 변환 시작</button>
+            <button type="submit" class="btn btn-primary btn-lg">💾 저장하고 AI 맞춤 활동 변환하기</button>
           </div>
         </form>
       </div>
     </section>
 
-    <!-- 3. 학생 맞춤 설정 -->
+    <!-- 3. 교육과정 관리 -->
+    <section id="view-curriculum" class="tab-view">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📚 2022 개정 교육과정 및 교과서 단원 데이터 관리</h2>
+          <div class="flex gap-2">
+            <button class="btn btn-sm btn-outline" onclick="CurriculumManager.downloadSampleCSV()">📄 CSV 양식 다운로드</button>
+            <button class="btn btn-sm btn-secondary" onclick="CurriculumManager.exportAllCurriculumCSV()">📥 CSV 내보내기</button>
+            <label class="btn btn-sm btn-success cursor-pointer">
+              📤 CSV 업로드
+              <input type="file" accept=".csv" class="sr-only" onchange="CurriculumManager.handleCSVUpload(event)" />
+            </label>
+          </div>
+        </div>
+        <div id="curriculum-table-container"></div>
+      </div>
+    </section>
+
+    <!-- 4. 학생 맞춤 설정 -->
     <section id="view-profiles" class="tab-view">
       <div class="card">
         <div class="card-header">
@@ -336,29 +429,25 @@ body {
       </div>
     </section>
 
-    <!-- 4. AI 변환 화면 -->
+    <!-- 5. AI 변환 화면 -->
     <section id="view-ai" class="tab-view">
       <div class="card">
         <div class="card-header">
           <div>
-            <h2 class="card-title" id="ai-view-lesson-title">내가 좋아하는 계절과 그 까닭</h2>
-            <p class="card-subtitle" id="ai-view-lesson-goal">학습목표: 자신의 생각과 그 까닭을 표현할 수 있다.</p>
+            <h2 class="card-title" id="ai-view-lesson-title">수업 활동 변환</h2>
+            <p class="card-subtitle" id="ai-view-lesson-goal">학습목표</p>
           </div>
-          <button class="btn btn-primary" onclick="triggerAIConversion()">🪄 UDL 변환 다시 실행</button>
+          <button class="btn btn-primary" onclick="triggerAIConversion()">🪄 UDL 변환 실행</button>
         </div>
-        <div id="ai-conversion-status" class="p-4 bg-blue-50 border rounded-xl text-center mb-4" style="display:none;">
-          생성 중...
-        </div>
+        <div id="ai-conversion-status" class="p-4 bg-blue-50 border rounded-xl text-center mb-4" style="display:none;">생성 중...</div>
         <div id="ai-activities-container"></div>
       </div>
     </section>
 
-    <!-- 5. 교사 편집 -->
+    <!-- 6. 교사 편집 -->
     <section id="view-editor" class="tab-view">
       <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">🛠️ 교사용 문항 검토 및 세부 편집</h2>
-        </div>
+        <div class="card-header"><h2 class="card-title">🛠️ 교사용 문항 검토 및 세부 편집</h2></div>
         <div class="flex gap-2 mb-4">
           <button class="btn btn-sm btn-secondary editor-type-tab active" data-type="A" onclick="openEditorForType('A')">A형 그림선택</button>
           <button class="btn btn-sm btn-secondary editor-type-tab" data-type="B" onclick="openEditorForType('B')">B형 낱말선택</button>
@@ -369,7 +458,7 @@ body {
       </div>
     </section>
 
-    <!-- 6. 학습 결과 -->
+    <!-- 7. 학습 결과 -->
     <section id="view-results" class="tab-view">
       <div class="card">
         <div class="card-header">
@@ -383,7 +472,7 @@ body {
       </div>
     </section>
 
-    <!-- 7. 인쇄 -->
+    <!-- 8. 인쇄 -->
     <section id="view-print" class="tab-view">
       <div class="card no-print">
         <div class="card-header">
@@ -395,7 +484,7 @@ body {
     </section>
   </main>
 
-  <!-- 학생 학습 뷰어 모달 -->
+  <!-- 학생 뷰어 모달 -->
   <div id="student-player-overlay" class="student-player-overlay" style="display:none;" role="dialog" aria-modal="true">
     <header class="student-player-header">
       <button class="btn btn-sm btn-secondary" onclick="closeStudentPlayer()">✖️ 닫기</button>
@@ -415,7 +504,8 @@ body {
     </footer>
   </div>
 
-  <!-- 전체 자바스크립트 통합 내장 -->
+  <!-- 전체 스크립트 로드: 교육과정 -> 데모 -> DB -> 오디오 -> AI엔진 -> 메인앱 -->
+  <script src="curriculum_data.js"></script>
   <script src="demo_data.js"></script>
   <script src="db.js"></script>
   <script src="tts_audio.js"></script>

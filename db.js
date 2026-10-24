@@ -1,13 +1,14 @@
 /**
  * 모두의 수업 변환기 (Universal Lesson Converter) - IndexedDB 영구 데이터베이스 모듈
  * - 교사 수업 정보, 학생 맞춤 프로필, AI 변환 활동 데이터, 학생 학습 결과 영구 저장
+ * - 2022 개정 교육과정 및 교과서 단원 데이터 관리 (공식 자료 + 사용자 등록 자료)
  * - IndexedDB 지원 + 브라우저 LocalStorage 자동 폴백 지원
  */
 
 class LessonDB {
   constructor() {
     this.dbName = 'UniversalLessonConverterDB';
-    this.dbVersion = 1;
+    this.dbVersion = 2; // 교육과정 저장소 추가에 따른 버전 업
     this.db = null;
     this.isReady = false;
     this.initPromise = this.init();
@@ -56,6 +57,19 @@ class LessonDB {
         // 5. 시스템 설정 (settings)
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+
+        // 6. 사용자 등록 교과서 단원 저장소 (custom_units)
+        if (!db.objectStoreNames.contains('custom_units')) {
+          const unitStore = db.createObjectStore('custom_units', { keyPath: 'id' });
+          unitStore.createIndex('curriculum', 'curriculum', { unique: false });
+          unitStore.createIndex('subject', 'subject', { unique: false });
+        }
+
+        // 7. 사용자 등록 성취기준 저장소 (custom_standards)
+        if (!db.objectStoreNames.contains('custom_standards')) {
+          const stdStore = db.createObjectStore('custom_standards', { keyPath: 'code' });
+          stdStore.createIndex('curriculum', 'curriculum', { unique: false });
         }
       };
 
@@ -151,7 +165,6 @@ class LessonDB {
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction(['lessons', 'activities', 'results'], 'readwrite');
         tx.objectStore('lessons').delete(id);
-        // 연관된 활동 및 결과도 함께 정리 가능
         tx.oncomplete = () => resolve(true);
         tx.onerror = () => reject(tx.error);
       });
@@ -286,7 +299,203 @@ class LessonDB {
     }
   }
 
-  // ===================== [ 5. 설정 및 백업 ] =====================
+  // ===================== [ 5. 2022 개정 교육과정 및 교과서 단원 관리 ] =====================
+  // 공식 단원 + 사용자 등록 단원 병합 조회
+  async getAllUnits() {
+    await this.initPromise;
+    let customUnits = [];
+    if (this.db && this.db.objectStoreNames.contains('custom_units')) {
+      customUnits = await new Promise((resolve) => {
+        const tx = this.db.transaction('custom_units', 'readonly');
+        const req = tx.objectStore('custom_units').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
+      });
+    } else {
+      customUnits = this._lsGet('custom_units', []);
+    }
+
+    const official = (window.OFFICIAL_TEXTBOOK_UNITS || []).map(u => ({ ...u, isUserAdded: false }));
+    return [...official, ...customUnits];
+  }
+
+  async saveCustomUnit(unit) {
+    await this.initPromise;
+    if (!unit.id) unit.id = 'c_unit_' + Date.now();
+    unit.isUserAdded = true;
+    unit.updatedAt = new Date().toISOString();
+
+    if (this.db && this.db.objectStoreNames.contains('custom_units')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('custom_units', 'readwrite');
+        const req = tx.objectStore('custom_units').put(unit);
+        req.onsuccess = () => resolve(unit);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      const list = this._lsGet('custom_units', []);
+      const idx = list.findIndex(u => u.id === unit.id);
+      if (idx >= 0) list[idx] = unit;
+      else list.push(unit);
+      this._lsSet('custom_units', list);
+      return unit;
+    }
+  }
+
+  async deleteCustomUnit(unitId) {
+    await this.initPromise;
+    if (this.db && this.db.objectStoreNames.contains('custom_units')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('custom_units', 'readwrite');
+        const req = tx.objectStore('custom_units').delete(unitId);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      let list = this._lsGet('custom_units', []);
+      list = list.filter(u => u.id !== unitId);
+      this._lsSet('custom_units', list);
+      return true;
+    }
+  }
+
+  // 공식 성취기준 + 사용자 등록 성취기준 병합 조회
+  async getAllStandards() {
+    await this.initPromise;
+    let customStds = [];
+    if (this.db && this.db.objectStoreNames.contains('custom_standards')) {
+      customStds = await new Promise((resolve) => {
+        const tx = this.db.transaction('custom_standards', 'readonly');
+        const req = tx.objectStore('custom_standards').getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => resolve([]);
+      });
+    } else {
+      customStds = this._lsGet('custom_standards', []);
+    }
+
+    const official = (window.OFFICIAL_STANDARDS || []).map(s => ({ ...s, isUserAdded: false }));
+    return [...official, ...customStds];
+  }
+
+  async saveCustomStandard(std) {
+    await this.initPromise;
+    std.isUserAdded = true;
+    std.source = std.source || '사용자 등록 자료 (교사 직접 추가)';
+
+    if (this.db && this.db.objectStoreNames.contains('custom_standards')) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('custom_standards', 'readwrite');
+        const req = tx.objectStore('custom_standards').put(std);
+        req.onsuccess = () => resolve(std);
+        req.onerror = () => reject(req.error);
+      });
+    } else {
+      const list = this._lsGet('custom_standards', []);
+      const idx = list.findIndex(s => s.code === std.code);
+      if (idx >= 0) list[idx] = std;
+      else list.push(std);
+      this._lsSet('custom_standards', list);
+      return std;
+    }
+  }
+
+  // CSV 파일 가져오기 (단원 및 성취기준 일괄 등록)
+  async importCurriculumCSV(csvText) {
+    const lines = csvText.trim().split(/\r?\n/);
+    if (lines.length < 2) throw new Error('유효한 CSV 데이터가 아닙니다.');
+
+    // 헤더 파싱
+    const header = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    let importedUnits = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue;
+      // CSV 라인 분리 (쉼표 및 따옴표 처리)
+      const values = this._parseCSVLine(lines[i]);
+      const row = {};
+      header.forEach((h, idx) => {
+        row[h] = values[idx] || '';
+      });
+
+      // 단원 데이터 생성
+      if (row['단원명'] || row['unitTitle']) {
+        const unit = {
+          id: 'c_unit_' + Date.now() + '_' + i,
+          curriculum: row['교육과정'] || row['curriculum'] || '2022 개정 공통 교육과정',
+          schoolLevel: '초등학교',
+          gradeGroup: row['학년군'] || row['gradeGroup'] || '3~4학년군',
+          grade: row['학년'] || row['grade'] || '초등 3학년',
+          subject: row['교과'] || row['subject'] || '국어',
+          publisher: row['출판사'] || row['publisher'] || '교사 등록 교재',
+          semester: row['학기'] || row['semester'] || '1학기',
+          unitNumber: row['단원번호'] || row['unitNumber'] || `${i}단원`,
+          unitTitle: row['단원명'] || row['unitTitle'],
+          topic: row['주제'] || row['topic'] || '',
+          defaultGoal: row['학습목표'] || row['defaultGoal'] || '',
+          summaryContent: row['학습내용'] || row['summaryContent'] || '',
+          keywords: (row['핵심어휘'] || row['keywords'] || '').split(/[,;]/).map(k => k.trim()).filter(Boolean),
+          linkedStandardCodes: (row['성취기준코드'] || row['linkedStandardCodes'] || '').split(/[,;]/).map(c => c.trim()).filter(Boolean),
+          source: '사용자 등록 자료 (CSV 가져오기)',
+          isUserAdded: true
+        };
+        await this.saveCustomUnit(unit);
+        importedUnits++;
+      }
+    }
+    return importedUnits;
+  }
+
+  // 간단한 CSV 라인 파서
+  _parseCSVLine(line) {
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        inQuotes = !inQuotes;
+      } else if (c === ',' && !inQuotes) {
+        result.push(cur.trim());
+        cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    result.push(cur.trim());
+    return result;
+  }
+
+  // 전체 단원 데이터 CSV 내보내기 (utf-8-sig 인코딩 대응용 텍스트 반환)
+  async exportCurriculumCSV() {
+    const units = await this.getAllUnits();
+    const headers = [
+      '구분', '교육과정', '학년군', '학년', '교과', '출판사', '학기',
+      '단원번호', '단원명', '주제', '학습목표', '학습내용', '핵심어휘', '성취기준코드', '출처'
+    ];
+
+    const rows = units.map(u => [
+      u.isUserAdded ? '사용자 등록 자료' : '공식 검증 자료',
+      `"${u.curriculum}"`,
+      `"${u.gradeGroup || ''}"`,
+      `"${u.grade}"`,
+      `"${u.subject}"`,
+      `"${u.publisher || ''}"`,
+      `"${u.semester || ''}"`,
+      `"${u.unitNumber || ''}"`,
+      `"${u.unitTitle || ''}"`,
+      `"${(u.topic || '').replace(/"/g, '""')}"`,
+      `"${(u.defaultGoal || '').replace(/"/g, '""')}"`,
+      `"${(u.summaryContent || '').replace(/"/g, '""')}"`,
+      `"${(u.keywords || []).join(';')}"`,
+      `"${(u.linkedStandardCodes || []).join(';')}"`,
+      `"${u.source || ''}"`
+    ]);
+
+    return [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  }
+
+  // ===================== [ 6. 설정 및 백업 ] =====================
   async getSetting(key, defaultValue = null) {
     await this.initPromise;
     if (this.db) {
@@ -337,7 +546,7 @@ class LessonDB {
     }
 
     return {
-      version: '1.0',
+      version: '2.0',
       exportedAt: new Date().toISOString(),
       appName: '모두의 수업 변환기',
       data: { lessons, profiles, activities, results }

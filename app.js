@@ -1,21 +1,23 @@
 /**
  * 모두의 수업 변환기 (Universal Lesson Converter) - 메인 애플리케이션 컨트롤러
- * - 초등 특수교육 & UDL 기반 수업 변환, 편집, 학생 학습, 결과 분석, 인쇄 관리
+ * - 2022 개정 공통 & 특수교육 기본 교육과정 성취기준 및 교과서 단원 드롭다운 연동
+ * - 보편적 학습설계(UDL) 기반 수업 변환, 편집, 학생 학습, 결과 분석, 인쇄, 교육과정 관리
  */
 
 // ==========================================================================
 // 1. 애플리케이션 상태 (State)
 // ==========================================================================
 const AppState = {
-  currentTab: 'home', // 'home' | 'create' | 'profiles' | 'ai' | 'editor' | 'results' | 'print'
+  currentTab: 'home', // 'home' | 'create' | 'curriculum' | 'profiles' | 'ai' | 'editor' | 'results' | 'print'
   currentLesson: null,
   currentActivities: null,
   selectedProfileId: null,
   currentEditingType: 'A', // 'A' | 'B' | 'C' | 'D'
-  isTeacherAuth: true,
+  isManualInputMode: false,
+  selectedUnit: null,
   settings: {
     teacherPin: '1234',
-    fontSize: 'medium', // 'normal' | 'medium' | 'large'
+    fontSize: 'medium',
     highContrast: false,
     speechRate: 0.85
   },
@@ -38,7 +40,7 @@ const AppState = {
 // 2. 초기화 (Init)
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('🌈 모두의 수업 변환기 초기화 시작...');
+  console.log('🌈 모두의 수업 변환기 (2022 개정 교육과정 연동판) 초기화 시작...');
 
   // 1. 데이터베이스 초기화 및 데모 데이터 주입
   await initDatabaseWithDemo();
@@ -46,14 +48,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // 2. 접근성 설정 복원
   initAccessibility();
 
-  // 3. UI 이벤트 리스너 등록
+  // 3. 2022 개정 교육과정 단계별 드롭다운 초기화
+  await CurriculumModule.initCurriculumSelectors();
+
+  // 4. UI 이벤트 리스너 등록
   bindGlobalEvents();
 
-  // 4. 초기 화면(홈) 렌더링
+  // 5. 초기 화면(홈) 렌더링
   await renderHomeScreen();
   await ProfileModule.loadProfilesDropdown();
 
-  console.log('✨ 모두의 수업 변환기 준비 완료!');
+  console.log('✨ 2022 개정 교육과정 연동 시스템 준비 완료!');
 });
 
 // 데모 데이터가 DB에 없으면 자동 주입
@@ -97,6 +102,7 @@ function switchTab(tabId) {
   // 탭별 데이터 리프레시
   if (tabId === 'home') renderHomeScreen();
   if (tabId === 'create') renderCreateScreen();
+  if (tabId === 'curriculum') CurriculumManager.renderCurriculumTable();
   if (tabId === 'profiles') ProfileModule.renderProfileList();
   if (tabId === 'ai') renderAIPreviewScreen();
   if (tabId === 'editor') EditorModule.renderEditor();
@@ -157,15 +163,18 @@ async function renderHomeScreen() {
   const lessons = await window.lessonDB.getAllLessons();
   const profiles = await window.lessonDB.getAllStudentProfiles();
   const results = await window.lessonDB.getAllResults();
+  const units = await window.lessonDB.getAllUnits();
 
   // 통계 업데이트
   const statLessonCount = document.getElementById('stat-lesson-count');
   const statProfileCount = document.getElementById('stat-profile-count');
   const statResultCount = document.getElementById('stat-result-count');
+  const statUnitCount = document.getElementById('stat-unit-count');
 
   if (statLessonCount) statLessonCount.textContent = `${lessons.length}개`;
   if (statProfileCount) statProfileCount.textContent = `${profiles.length}명`;
   if (statResultCount) statResultCount.textContent = `${results.length}회`;
+  if (statUnitCount) statUnitCount.textContent = `${units.length}개`;
 
   // 저장된 수업 목록 렌더링
   const listContainer = document.getElementById('home-lesson-list');
@@ -176,7 +185,7 @@ async function renderHomeScreen() {
       <div class="empty-state text-center p-8 bg-white rounded-2xl border-2 border-dashed border-slate-200">
         <p class="text-4xl mb-3">📚</p>
         <p class="text-lg font-bold text-slate-700">등록된 수업이 없습니다.</p>
-        <p class="text-sm text-slate-500 mb-4">[새 수업 만들기] 버튼을 눌러 첫 번째 특수교육 맞춤 수업을 만들어보세요.</p>
+        <p class="text-sm text-slate-500 mb-4">[새 수업 만들기] 버튼을 눌러 교육과정 및 교과서 단원을 선택해 보세요.</p>
         <button class="btn btn-primary" onclick="switchTab('create')">➕ 새 수업 만들기</button>
       </div>`;
     return;
@@ -187,10 +196,11 @@ async function renderHomeScreen() {
     return `
       <div class="lesson-item-card card p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-2 ${isCurrent ? 'border-blue-400 bg-blue-50/30' : 'border-slate-100'} hover:border-blue-300 transition-all">
         <div class="flex-1">
-          <div class="flex items-center gap-2 mb-1.5">
-            <span class="badge bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold">${escapeHtml(l.curriculum || '공통/기본')}</span>
+          <div class="flex flex-wrap items-center gap-2 mb-1.5">
+            <span class="badge bg-indigo-100 text-indigo-700 text-xs px-2.5 py-1 rounded-full font-bold">${escapeHtml(l.curriculum || '2022 개정')}</span>
             <span class="badge bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">${escapeHtml(l.grade || '초등')}</span>
             <span class="badge bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-bold">${escapeHtml(l.subject || '국어')}</span>
+            ${l.unit ? `<span class="badge bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-full font-bold">${escapeHtml(l.unit)}</span>` : ''}
             ${isCurrent ? '<span class="badge bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded font-extrabold">현재 선택됨</span>' : ''}
           </div>
           <h3 class="text-lg font-bold text-slate-800 mb-1 cursor-pointer hover:text-blue-600" onclick="selectCurrentLesson('${l.id}')">
@@ -223,7 +233,6 @@ async function renderHomeScreen() {
   }).join('');
 }
 
-// 수업 선택
 async function selectCurrentLesson(lessonId) {
   const lesson = await window.lessonDB.getLesson(lessonId);
   if (lesson) {
@@ -235,20 +244,429 @@ async function selectCurrentLesson(lessonId) {
   }
 }
 
-// 수업 선택 후 변환 탭으로 바로 이동
 async function selectAndConvertLesson(lessonId) {
   await selectCurrentLesson(lessonId);
   switchTab('ai');
 }
 
 // ==========================================================================
-// 6. 수업 생성 및 수정 화면 (CreateScreen)
+// 6. 2022 개정 교육과정 & 교과서 단원 단계별 드롭다운 모듈 (CurriculumModule)
+// ==========================================================================
+const CurriculumModule = {
+  allUnits: [],
+  allStandards: [],
+
+  async initCurriculumSelectors() {
+    this.allUnits = await window.lessonDB.getAllUnits();
+    this.allStandards = await window.lessonDB.getAllStandards();
+
+    // 상위 항목 이벤트 리스너 등록 (캐스케이딩 체인)
+    const selCurri = document.getElementById('sel-curriculum');
+    const selGrade = document.getElementById('sel-grade');
+    const selSubject = document.getElementById('sel-subject');
+    const selPublisher = document.getElementById('sel-publisher');
+    const selSemester = document.getElementById('sel-semester');
+    const selUnit = document.getElementById('sel-unit');
+
+    if (selCurri) selCurri.addEventListener('change', () => this.updatePublishersAndUnits());
+    if (selGrade) selGrade.addEventListener('change', () => this.updatePublishersAndUnits());
+    if (selSubject) selSubject.addEventListener('change', () => this.updatePublishersAndUnits());
+    if (selPublisher) selPublisher.addEventListener('change', () => this.updateUnitList());
+    if (selSemester) selSemester.addEventListener('change', () => this.updateUnitList());
+    if (selUnit) selUnit.addEventListener('change', () => this.handleUnitSelection());
+
+    // 초기 드롭다운 채우기
+    this.updatePublishersAndUnits();
+  },
+
+  // 조건에 맞는 출판사 목록 갱신 및 단원 목록 연쇄 갱신
+  updatePublishersAndUnits() {
+    const curri = document.getElementById('sel-curriculum')?.value || '2022 개정 공통 교육과정';
+    const grade = document.getElementById('sel-grade')?.value || '초등 3학년';
+    const subject = document.getElementById('sel-subject')?.value || '국어';
+
+    // 필터링된 단원들에서 출판사 목록 추출
+    const filtered = this.allUnits.filter(u =>
+      u.curriculum === curri && u.grade === grade && u.subject === subject
+    );
+
+    const publisherSel = document.getElementById('sel-publisher');
+    if (publisherSel) {
+      const pubSet = new Set(filtered.map(u => u.publisher).filter(Boolean));
+      if (pubSet.size === 0) {
+        pubSet.add(curri.includes('기본') ? '국립특수교육원' : '교육부 (국정)');
+      }
+      publisherSel.innerHTML = Array.from(pubSet).map(p => `
+        <option value="${escapeHtml(p)}">${escapeHtml(p)}</option>
+      `).join('');
+    }
+
+    this.updateUnitList();
+  },
+
+  // 조건에 맞는 단원명 목록 갱신
+  updateUnitList() {
+    const curri = document.getElementById('sel-curriculum')?.value;
+    const grade = document.getElementById('sel-grade')?.value;
+    const subject = document.getElementById('sel-subject')?.value;
+    const publisher = document.getElementById('sel-publisher')?.value;
+    const semester = document.getElementById('sel-semester')?.value;
+
+    const unitSel = document.getElementById('sel-unit');
+    if (!unitSel) return;
+
+    // 단원 필터링
+    let matchingUnits = this.allUnits.filter(u =>
+      u.curriculum === curri &&
+      u.grade === grade &&
+      u.subject === subject &&
+      (!publisher || u.publisher === publisher) &&
+      (!semester || u.semester === semester)
+    );
+
+    if (matchingUnits.length === 0) {
+      unitSel.innerHTML = '<option value="">(해당 조건의 단원 없음 - 직접 입력 가능)</option>';
+      this.clearUnitPreview();
+      return;
+    }
+
+    unitSel.innerHTML = matchingUnits.map(u => `
+      <option value="${u.id}">${escapeHtml(u.unitTitle)} ${u.isUserAdded ? '(사용자 등록)' : ''}</option>
+    `).join('');
+
+    // 첫 번째 단원 자동 선택 및 프리뷰 갱신
+    this.handleUnitSelection();
+  },
+
+  // 단원 선택 시 상세 정보 및 성취기준 패널 갱신
+  handleUnitSelection() {
+    const unitId = document.getElementById('sel-unit')?.value;
+    const unit = this.allUnits.find(u => u.id === unitId);
+    if (!unit) {
+      this.clearUnitPreview();
+      return;
+    }
+
+    AppState.selectedUnit = unit;
+
+    // 출처 뱃지 및 상세 출처
+    const badgeEl = document.getElementById('unit-source-badge');
+    const sourceDetailEl = document.getElementById('unit-source-detail');
+    if (badgeEl) {
+      badgeEl.className = unit.isUserAdded
+        ? 'badge bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-extrabold'
+        : 'badge bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-extrabold';
+      badgeEl.innerHTML = unit.isUserAdded ? '👤 사용자 등록 자료' : '🏛️ 교육부 공식 검증 자료';
+    }
+    if (sourceDetailEl) {
+      sourceDetailEl.textContent = `출처: ${unit.source || '공식 교육과정 고시 기준'}`;
+    }
+
+    // 추천 학습목표 표시
+    const goalTextEl = document.getElementById('suggested-goal-text');
+    if (goalTextEl) {
+      goalTextEl.textContent = unit.defaultGoal || '학습목표가 지정되지 않았습니다.';
+    }
+
+    // 연계 성취기준 체크박스 목록 렌더링
+    const standardsContainer = document.getElementById('unit-linked-standards-list');
+    if (standardsContainer) {
+      const linkedCodes = unit.linkedStandardCodes || [];
+      const relevantStds = this.allStandards.filter(s =>
+        linkedCodes.includes(s.code) || (s.curriculum === unit.curriculum && s.subject === unit.subject)
+      );
+
+      if (relevantStds.length === 0) {
+        standardsContainer.innerHTML = '<div class="text-xs text-slate-400 p-2">등록된 성취기준이 없습니다.</div>';
+      } else {
+        standardsContainer.innerHTML = relevantStds.map(s => {
+          const isLinked = linkedCodes.includes(s.code);
+          return `
+            <label class="flex items-start gap-2 p-1.5 hover:bg-white rounded cursor-pointer transition-colors text-xs">
+              <input type="checkbox" class="chk-linked-std mt-0.5" value="${s.code}" data-text="${escapeHtml(s.text)}" ${isLinked ? 'checked' : ''} />
+              <div>
+                <strong class="text-blue-700">${escapeHtml(s.code)}</strong>
+                <span class="text-slate-700 ml-1">${escapeHtml(s.text)}</span>
+                <span class="text-slate-400 text-xs ml-1 font-mono">(${escapeHtml(s.source || '교육부')})</span>
+              </div>
+            </label>
+          `;
+        }).join('');
+      }
+    }
+
+    // 자동 양식 채우기 즉시 반영
+    this.applySelectedUnitToForm(false);
+  },
+
+  clearUnitPreview() {
+    AppState.selectedUnit = null;
+    const badgeEl = document.getElementById('unit-source-badge');
+    const sourceDetailEl = document.getElementById('unit-source-detail');
+    const goalTextEl = document.getElementById('suggested-goal-text');
+    const standardsContainer = document.getElementById('unit-linked-standards-list');
+
+    if (badgeEl) badgeEl.innerHTML = '⚠️ 단원 미선택';
+    if (sourceDetailEl) sourceDetailEl.textContent = '단원을 선택하면 출처 정보가 표시됩니다.';
+    if (goalTextEl) goalTextEl.textContent = '단원을 선택해 주세요.';
+    if (standardsContainer) standardsContainer.innerHTML = '<div class="text-xs text-slate-400 p-2">단원을 선택하면 연계된 성취기준이 표시됩니다.</div>';
+  },
+
+  // 선택된 단원 데이터를 폼 입력란에 자동 적용
+  applySelectedUnitToForm(showNotification = true) {
+    const unit = AppState.selectedUnit;
+    if (!unit) return;
+
+    // 제목, 교육과정, 학년, 교과, 단원
+    const titleInput = document.getElementById('input-lesson-title');
+    if (titleInput && (!titleInput.value || showNotification)) {
+      titleInput.value = `${unit.unitTitle} - ${unit.topic || '학습 활동'}`;
+    }
+
+    document.getElementById('input-lesson-curriculum').value = unit.curriculum;
+    document.getElementById('input-lesson-grade').value = unit.grade;
+    document.getElementById('input-lesson-subject').value = unit.subject;
+    document.getElementById('input-lesson-unit').value = unit.unitTitle;
+    document.getElementById('input-lesson-topic').value = unit.topic || '';
+
+    // 체크된 성취기준 수집 및 반영
+    const checkedStds = [];
+    document.querySelectorAll('.chk-linked-std:checked').forEach(chk => {
+      checkedStds.push(`${chk.value} ${chk.dataset.text}`);
+    });
+    document.getElementById('input-lesson-standards').value = checkedStds.join('\n');
+
+    // 추천 학습목표 반영 (비어있거나 교사가 버튼을 명시적으로 눌렀을 때)
+    const goalInput = document.getElementById('input-lesson-goal');
+    if (goalInput && (!goalInput.value || showNotification)) {
+      goalInput.value = unit.defaultGoal || '';
+    }
+
+    // 본문 지문 및 핵심 어휘
+    const contentInput = document.getElementById('input-lesson-content');
+    if (contentInput && (!contentInput.value || showNotification)) {
+      contentInput.value = unit.summaryContent || '';
+    }
+
+    const kwInput = document.getElementById('input-lesson-keywords');
+    if (kwInput && (!kwInput.value || showNotification)) {
+      kwInput.value = (unit.keywords || []).join(', ');
+    }
+
+    if (showNotification) {
+      window.audioController.playPopSound();
+      showToast(`[${unit.unitTitle}] 단원 정보와 2022 성취기준이 수업 양식에 적용되었습니다!`, 'success');
+    }
+  }
+};
+
+// 추천 목표 바로 적용 헬퍼
+function useSuggestedGoal() {
+  const goal = document.getElementById('suggested-goal-text')?.textContent.trim();
+  const goalInput = document.getElementById('input-lesson-goal');
+  if (goal && goalInput) {
+    goalInput.value = goal;
+    goalInput.focus();
+    window.audioController.playPopSound();
+    showToast('추천 학습목표가 입력되었습니다. 자유롭게 수정하실 수 있습니다.', 'info');
+  }
+}
+
+// 수동 입력 모드 토글
+function toggleInputMode() {
+  AppState.isManualInputMode = !AppState.isManualInputMode;
+  const panel = document.getElementById('curriculum-selection-panel');
+  const btn = document.getElementById('btn-toggle-input-mode');
+
+  if (AppState.isManualInputMode) {
+    if (panel) panel.style.display = 'none';
+    if (btn) btn.innerHTML = '🎯 교육과정 단원 선택 모드로 전환';
+    document.getElementById('input-lesson-curriculum').readOnly = false;
+    document.getElementById('input-lesson-grade').readOnly = false;
+    document.getElementById('input-lesson-subject').readOnly = false;
+    showToast('수동 직접 입력 모드로 전환되었습니다. 자유롭게 입력해 주세요.', 'info');
+  } else {
+    if (panel) panel.style.display = 'block';
+    if (btn) btn.innerHTML = '✍️ 수동 직접 입력 모드로 전환';
+    document.getElementById('input-lesson-curriculum').readOnly = true;
+    document.getElementById('input-lesson-grade').readOnly = true;
+    document.getElementById('input-lesson-subject').readOnly = true;
+    showToast('교육과정 단원 선택 모드로 전환되었습니다.', 'info');
+  }
+}
+
+function applySelectedUnitToForm() {
+  CurriculumModule.applySelectedUnitToForm(true);
+}
+
+// ==========================================================================
+// 7. 교육과정 데이터 관리자 모듈 (CurriculumManager)
+// ==========================================================================
+const CurriculumManager = {
+  async renderCurriculumTable() {
+    const units = await window.lessonDB.getAllUnits();
+    const filterType = document.getElementById('curriculum-filter-type')?.value || 'all';
+    const filterCurri = document.getElementById('curriculum-filter-curri')?.value || 'all';
+
+    let filtered = units;
+    if (filterType === 'official') filtered = filtered.filter(u => !u.isUserAdded);
+    if (filterType === 'user') filtered = filtered.filter(u => u.isUserAdded);
+    if (filterCurri !== 'all') filtered = filtered.filter(u => u.curriculum === filterCurri);
+
+    const countEl = document.getElementById('curriculum-total-count');
+    if (countEl) countEl.textContent = `총 ${filtered.length}개 단원 표시 중 (전체 ${units.length}개)`;
+
+    const container = document.getElementById('curriculum-table-container');
+    if (!container) return;
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="text-center p-8 bg-white rounded-xl border text-slate-500">
+          일치하는 교육과정 단원이 없습니다. [CSV 파일 업로드]로 새 교과서 단원을 등록해 보세요.
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b border-slate-200 font-bold text-slate-600">
+            <tr>
+              <th class="p-3">자료 구분</th>
+              <th class="p-3">교육과정</th>
+              <th class="p-3">학년</th>
+              <th class="p-3">교과/출판사</th>
+              <th class="p-3">학기</th>
+              <th class="p-3">단원명</th>
+              <th class="p-3">연계 2022 성취기준 코드</th>
+              <th class="p-3">출처</th>
+              <th class="p-3 text-center">작업</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            ${filtered.map(u => `
+              <tr class="hover:bg-slate-50 transition-colors">
+                <td class="p-3">
+                  ${u.isUserAdded
+                    ? '<span class="badge bg-amber-100 text-amber-800 text-xs px-2 py-0.5 rounded-full font-bold">👤 사용자 등록</span>'
+                    : '<span class="badge bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded-full font-bold">🏛️ 공식 검증</span>'}
+                </td>
+                <td class="p-3 font-semibold text-slate-800">${escapeHtml(u.curriculum)}</td>
+                <td class="p-3 font-bold text-blue-700">${escapeHtml(u.grade)}</td>
+                <td class="p-3 text-slate-700">${escapeHtml(u.subject)} <span class="text-slate-400">(${escapeHtml(u.publisher || '국정')})</span></td>
+                <td class="p-3 text-slate-600">${escapeHtml(u.semester || '1학기')}</td>
+                <td class="p-3 font-extrabold text-slate-900">${escapeHtml(u.unitTitle)}</td>
+                <td class="p-3 font-mono font-bold text-indigo-700">${(u.linkedStandardCodes || []).join(', ')}</td>
+                <td class="p-3 text-slate-400 text-xs">${escapeHtml(u.source || '공식 고시')}</td>
+                <td class="p-3 text-center space-x-1 whitespace-nowrap">
+                  <button class="btn btn-sm btn-primary py-1 px-2 text-xs" onclick="CurriculumManager.selectUnitAndCreate('${u.id}')">
+                    ✏️ 이 단원으로 수업 생성
+                  </button>
+                  ${u.isUserAdded ? `
+                    <button class="btn btn-sm btn-danger py-1 px-2 text-xs" onclick="CurriculumManager.deleteCustomUnit('${u.id}')">
+                      🗑️
+                    </button>
+                  ` : ''}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  },
+
+  async selectUnitAndCreate(unitId) {
+    const units = await window.lessonDB.getAllUnits();
+    const target = units.find(u => u.id === unitId);
+    if (!target) return;
+
+    switchTab('create');
+    // 드롭다운 값 설정
+    const selCurri = document.getElementById('sel-curriculum');
+    const selGrade = document.getElementById('sel-grade');
+    const selSubject = document.getElementById('sel-subject');
+    const selSemester = document.getElementById('sel-semester');
+
+    if (selCurri) selCurri.value = target.curriculum;
+    if (selGrade) selGrade.value = target.grade;
+    if (selSubject) selSubject.value = target.subject;
+    if (selSemester) selSemester.value = target.semester || '1학기';
+
+    CurriculumModule.updatePublishersAndUnits();
+    const selUnit = document.getElementById('sel-unit');
+    if (selUnit) selUnit.value = target.id;
+    CurriculumModule.handleUnitSelection();
+    CurriculumModule.applySelectedUnitToForm(true);
+  },
+
+  async deleteCustomUnit(unitId) {
+    if (!confirm('이 사용자 등록 단원을 삭제하시겠습니까?')) return;
+    await window.lessonDB.deleteCustomUnit(unitId);
+    showToast('단원이 삭제되었습니다.', 'info');
+    await CurriculumModule.initCurriculumSelectors();
+    this.renderCurriculumTable();
+  },
+
+  async handleCSVUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target.result;
+        const count = await window.lessonDB.importCurriculumCSV(text);
+        showToast(`${count}개의 새 교과서 단원이 성공적으로 등록되었습니다!`, 'success');
+        await CurriculumModule.initCurriculumSelectors();
+        this.renderCurriculumTable();
+      } catch (err) {
+        showToast(`CSV 등록 실패: ${err.message}`, 'warning');
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+    e.target.value = '';
+  },
+
+  downloadSampleCSV() {
+    const headers = '교육과정,학년군,학년,교과,출판사,학기,단원번호,단원명,주제,학습목표,학습내용,핵심어휘,성취기준코드';
+    const sampleRows = [
+      '2022 개정 공통 교육과정,3~4학년군,초등 3학년,국어,교육부 (국정),1학기,6단원,6. 일이 일어난 까닭,일이 일어난 원인과 결과 파악하기,일이 일어난 까닭을 생각하며 글을 읽을 수 있다.,사건의 원인과 결과를 찾아보고 이야기 순서대로 정리합니다.,원인;결과;까닭;사건,[4국02-01]',
+      '2022 개정 특수교육 기본 교육과정,3~4학년군,초등 3학년,국어,국립특수교육원,1학기,5단원,5. 내 마음을 표현해요,기쁨과 슬픔 감정 표현하기,그림과 상징으로 자신의 기분을 표현할 수 있다.,행복한 표정과 속상한 표정 그림을 보고 내 기분을 고릅니다.,기쁨;슬픔;마음;얼굴표정,[기특국03-03]'
+    ];
+
+    const csvContent = '\uFEFF' + [headers, ...sampleRows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = '2022_개정_교과서단원_등록양식_샘플.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('샘플 CSV 양식이 다운로드되었습니다.', 'success');
+  },
+
+  async exportAllCurriculumCSV() {
+    const csvContent = '\uFEFF' + await window.lessonDB.exportCurriculumCSV();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `2022_개정_교육과정_교과서단원_전체_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('전체 교육과정 단원 CSV 파일이 다운로드되었습니다.', 'success');
+  }
+};
+
+// ==========================================================================
+// 8. 수업 생성 및 수정 화면 (CreateScreen)
 // ==========================================================================
 function renderCreateScreen(lesson = null) {
   const target = lesson || {
     id: '',
     title: '',
-    curriculum: '공통 및 특수교육 기본 연계',
+    curriculum: '2022 개정 공통 교육과정',
     grade: '초등 3학년',
     subject: '국어',
     unit: '',
@@ -274,7 +692,7 @@ function renderCreateScreen(lesson = null) {
 
   const titleEl = document.getElementById('create-screen-title');
   if (titleEl) {
-    titleEl.textContent = target.id ? '✏️ 수업 정보 수정' : '➕ 새 수업 만들기';
+    titleEl.textContent = target.id ? '✏️ 수업 정보 수정' : '➕ 2022 개정 교육과정 기반 수업 만들기';
   }
 }
 
@@ -294,6 +712,7 @@ async function handleLessonFormSubmit(e) {
   const grade = document.getElementById('input-lesson-grade').value;
   const subject = document.getElementById('input-lesson-subject').value;
   const unit = document.getElementById('input-lesson-unit').value.trim();
+  const standards = document.getElementById('input-lesson-standards').value.trim();
   const goal = document.getElementById('input-lesson-goal').value.trim();
   const topic = document.getElementById('input-lesson-topic').value.trim();
   const content = document.getElementById('input-lesson-content').value.trim();
@@ -315,6 +734,7 @@ async function handleLessonFormSubmit(e) {
     grade,
     subject,
     unit,
+    standards,
     goal,
     topic,
     content,
@@ -360,7 +780,7 @@ async function deleteLessonConfirm(lessonId) {
 }
 
 // ==========================================================================
-// 7. AI 학습활동 자동 변환 (AIConversionModule)
+// 9. AI 학습활동 자동 변환 (AIConversionModule)
 // ==========================================================================
 async function triggerAIConversion() {
   if (!AppState.currentLesson) {
@@ -376,14 +796,12 @@ async function triggerAIConversion() {
   }
 
   try {
-    // 선택된 학생 프로필 가져오기
     let targetProfile = null;
     if (AppState.selectedProfileId) {
       const profiles = await window.lessonDB.getAllStudentProfiles();
       targetProfile = profiles.find(p => p.id === AppState.selectedProfileId) || null;
     }
 
-    // UDL 변환 실행
     const result = await window.udlEngine.convertLesson(AppState.currentLesson, targetProfile);
     result.lessonId = AppState.currentLesson.id;
     await window.lessonDB.saveActivities(result);
@@ -467,7 +885,7 @@ function renderAIPreviewScreen() {
 }
 
 // ==========================================================================
-// 8. 교사용 편집 모듈 (EditorModule)
+// 10. 교사용 편집 모듈 (EditorModule)
 // ==========================================================================
 const EditorModule = {
   currentType: 'A',
@@ -485,7 +903,6 @@ const EditorModule = {
       return;
     }
 
-    // 탭 활성화 스타일
     document.querySelectorAll('.editor-type-tab').forEach(b => {
       b.classList.toggle('active', b.dataset.type === this.currentType);
     });
@@ -537,7 +954,6 @@ const EditorModule = {
           </div>
         </div>
 
-        <!-- 공통 지시문 & TTS 문장 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
           <div class="form-group">
             <label class="form-label text-xs">지시문 (화면 표시)</label>
@@ -549,7 +965,6 @@ const EditorModule = {
           </div>
         </div>
 
-        <!-- 힌트 -->
         <div class="form-group mb-3">
           <label class="form-label text-xs">도움 힌트 (학생 힌트 버튼 클릭 시 표시)</label>
           <input type="text" class="form-input text-sm" value="${escapeHtml(item.hint || '')}" onchange="EditorModule.updateField(${idx}, 'hint', this.value)" />
@@ -621,7 +1036,7 @@ const EditorModule = {
     return `
       <div class="mt-3 pt-3 border-t">
         <div class="form-group mb-3">
-          <label class="form-label text-xs">문장 틀 템플릿 (빈칸은 {blank1}, {blank2} 등으로 표현)</label>
+          <label class="form-label text-xs">문장 틀 템플릿 (빈칸: {blank1}, {blank2})</label>
           <input type="text" class="form-input text-sm" value="${escapeHtml(item.frameTemplate || '')}" onchange="EditorModule.updateField(${idx}, 'frameTemplate', this.value)" />
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -730,7 +1145,7 @@ function openEditorForType(typeChar) {
 }
 
 // ==========================================================================
-// 9. 학생 전용 학습 뷰어 (PlayerModule)
+// 11. 학생 전용 학습 뷰어 (PlayerModule)
 // ==========================================================================
 function startStudentPlayer(typeChar) {
   const acts = AppState.currentActivities;
@@ -784,18 +1199,15 @@ function renderPlayerCurrentItem() {
   const item = p.items[p.currentIndex];
   const total = p.items.length;
 
-  // 진행률 바 업데이트
   const progressPercent = Math.round(((p.currentIndex) / total) * 100);
   const fill = document.getElementById('player-progress-fill');
   const text = document.getElementById('player-progress-text');
   if (fill) fill.style.width = `${progressPercent}%`;
   if (text) text.textContent = `${p.currentIndex + 1} / ${total} 단계`;
 
-  // 이전/다음 버튼 상태
   const btnPrev = document.getElementById('player-btn-prev');
   if (btnPrev) btnPrev.style.visibility = p.currentIndex === 0 ? 'hidden' : 'visible';
 
-  // 음성 자동 읽기 (학생 프로필 설정 반영)
   if (item.audioPrompt) {
     window.audioController.speak(item.audioPrompt);
   }
@@ -833,20 +1245,16 @@ function renderPlayerCurrentItem() {
       ` : ''}
     </div>
 
-    <!-- 활동별 인터랙션 영역 -->
     ${contentHtml}
 
-    <!-- 피드백 메시지 박스 -->
     <div id="player-feedback-area" style="display:none;"></div>
   `;
 
-  // D형인 경우 캔버스 초기화
   if (isD) {
     initDrawingCanvas();
   }
 }
 
-// A형 플레이어 렌더러
 function renderPlayerTypeA(item) {
   const p = AppState.player;
   const savedAns = p.answers[item.id];
@@ -879,7 +1287,6 @@ function selectPlayerOptionA(itemId, optId) {
     time: Date.now()
   };
 
-  // 피드백 표시
   const fb = document.getElementById('player-feedback-area');
   if (fb) {
     fb.style.display = 'block';
@@ -896,14 +1303,12 @@ function selectPlayerOptionA(itemId, optId) {
     }
   }
 
-  // 버튼 스타일 즉시 반영
   document.querySelectorAll('.picture-option-btn').forEach(btn => {
     btn.classList.remove('selected');
   });
-  event.currentTarget.classList.add('selected');
+  if (event && event.currentTarget) event.currentTarget.classList.add('selected');
 }
 
-// B형 플레이어 렌더러
 function renderPlayerTypeB(item) {
   const p = AppState.player;
   const savedAns = p.answers[item.id];
@@ -961,7 +1366,6 @@ function selectPlayerOptionB(itemId, optId, text) {
   }
 }
 
-// C형 플레이어 렌더러
 function renderPlayerTypeC(item) {
   const p = AppState.player;
   const savedAns = p.answers[item.id] || { blank1: '', blank2: '' };
@@ -1026,14 +1430,12 @@ function selectPlayerOptionC(itemId, slotNum, value) {
   }
 }
 
-// D형 플레이어 렌더러 (말 / 글 / 그림 3-Way 자유표현)
 function renderPlayerTypeD(item) {
   const p = AppState.player;
   const savedAns = p.answers[item.id] || { text: '', hasDrawing: false };
 
   return `
     <div class="free-expression-card">
-      <!-- 말문 틔우기 힌트 낱말 -->
       <div class="mb-4">
         <span class="text-xs font-bold text-slate-500 mr-2">💡 도움 낱말:</span>
         <div class="inline-flex flex-wrap gap-1.5">
@@ -1045,7 +1447,6 @@ function renderPlayerTypeD(item) {
         </div>
       </div>
 
-      <!-- 1. 글 & 음성 입력 창 -->
       <div class="form-group mb-4">
         <div class="flex items-center justify-between mb-1.5">
           <label class="form-label text-sm font-bold text-slate-700">✍️ 글이나 말로 생각 표현하기:</label>
@@ -1056,7 +1457,6 @@ function renderPlayerTypeD(item) {
         <textarea id="player-free-textarea" class="form-textarea text-base" rows="3" placeholder="자신의 생각과 그 까닭을 자유롭게 적거나 마이크 버튼을 눌러 말해보세요." oninput="updatePlayerDText('${item.id}', this.value)">${escapeHtml(savedAns.text || '')}</textarea>
       </div>
 
-      <!-- 2. 그림 그리기 캔버스 -->
       <div class="form-group">
         <div class="flex items-center justify-between mb-1">
           <label class="form-label text-sm font-bold text-slate-700">🎨 그림으로 표현하기:</label>
@@ -1204,7 +1604,6 @@ function clearDrawingCanvas() {
   }
 }
 
-// 다음 / 이전 문항 탐색
 function playerNextItem() {
   const p = AppState.player;
   window.audioController.playPopSound();
@@ -1238,7 +1637,6 @@ function togglePlayerHint() {
   }
 }
 
-// 학습 완료 처리 및 결과 저장
 async function finishStudentPlayer() {
   const p = AppState.player;
   const totalItems = p.items.length;
@@ -1251,7 +1649,6 @@ async function finishStudentPlayer() {
   const durationSec = Math.round((Date.now() - p.startTime) / 1000);
   const scorePercent = totalItems > 0 ? Math.round((correctCount / totalItems) * 100) : 100;
 
-  // DB에 학습 결과 영구 기록
   const resultRecord = {
     lessonId: AppState.currentLesson ? AppState.currentLesson.id : 'demo',
     lessonTitle: AppState.currentLesson ? AppState.currentLesson.title : '국어 수업',
@@ -1269,8 +1666,6 @@ async function finishStudentPlayer() {
   };
 
   await window.lessonDB.saveResult(resultRecord);
-
-  // 축하 팡파르 사운드 및 피드백 화면
   window.audioController.playFanfareSound();
 
   const body = document.getElementById('player-body-container');
@@ -1310,7 +1705,7 @@ async function finishStudentPlayer() {
 }
 
 // ==========================================================================
-// 10. 학생 맞춤 프로필 관리 모듈 (ProfileModule)
+// 12. 학생 맞춤 프로필 관리 모듈 (ProfileModule)
 // ==========================================================================
 const ProfileModule = {
   async renderProfileList() {
@@ -1403,7 +1798,6 @@ const ProfileModule = {
     if (!confirm('학생 프로필을 삭제하시겠습니까?')) return;
     const profiles = await window.lessonDB.getAllStudentProfiles();
     const filtered = profiles.filter(p => p.id !== id);
-    // LocalStorage / IndexedDB 반영
     const tx = await window.lessonDB.getStore('student_profiles', 'readwrite');
     if (tx) tx.delete(id);
     else window.lessonDB._lsSet('student_profiles', filtered);
@@ -1422,7 +1816,7 @@ const ProfileModule = {
 };
 
 // ==========================================================================
-// 11. 학습 결과 및 분석 모듈 (ResultModule)
+// 13. 학습 결과 및 분석 모듈 (ResultModule)
 // ==========================================================================
 const ResultModule = {
   async renderResults() {
@@ -1440,10 +1834,8 @@ const ResultModule = {
       return;
     }
 
-    // 통계 차트 렌더링
     this.renderResultChart(results);
 
-    // 테이블 렌더링
     container.innerHTML = `
       <div class="overflow-x-auto bg-white rounded-2xl border border-slate-200 shadow-sm">
         <table class="w-full text-left text-sm">
@@ -1510,7 +1902,6 @@ const ResultModule = {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // 유형별 평균 정답률 계산
     const types = ['A', 'B', 'C', 'D'];
     const avgs = types.map(t => {
       const filtered = results.filter(r => r.activityType === t);
@@ -1524,7 +1915,6 @@ const ResultModule = {
     const maxHeight = 120;
     const baseY = 140;
 
-    // 축 그리기
     ctx.strokeStyle = '#cbd5e1';
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -1538,14 +1928,12 @@ const ResultModule = {
       const x = startX + i * 120;
       const y = baseY - h;
 
-      // 막대 그리기
       const colors = ['#ef4444', '#f59e0b', '#6366f1', '#10b981'];
       ctx.fillStyle = colors[i];
       ctx.beginPath();
       ctx.roundRect(x, y, barWidth, h, [6, 6, 0, 0]);
       ctx.fill();
 
-      // 라벨 및 점수
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 12px Pretendard';
       ctx.textAlign = 'center';
@@ -1573,7 +1961,6 @@ const ResultModule = {
       `"${r.teacherNote || ''}"`
     ]);
 
-    // utf-8-sig BOM 추가
     const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -1595,7 +1982,7 @@ const ResultModule = {
 };
 
 // ==========================================================================
-// 12. 인쇄 및 PDF 학습지 출력 모듈 (PrintModule)
+// 14. 인쇄 및 PDF 학습지 출력 모듈 (PrintModule)
 // ==========================================================================
 const PrintModule = {
   selectedTypes: { A: true, B: true, C: true, D: true },
@@ -1612,23 +1999,10 @@ const PrintModule = {
     }
 
     let sheetsHtml = '';
-
-    // A형 학습지
-    if (this.selectedTypes.A && acts.typeA) {
-      sheetsHtml += this.generateSheetA(lesson, acts.typeA);
-    }
-    // B형 학습지
-    if (this.selectedTypes.B && acts.typeB) {
-      sheetsHtml += this.generateSheetB(lesson, acts.typeB);
-    }
-    // C형 학습지
-    if (this.selectedTypes.C && acts.typeC) {
-      sheetsHtml += this.generateSheetC(lesson, acts.typeC);
-    }
-    // D형 학습지
-    if (this.selectedTypes.D && acts.typeD) {
-      sheetsHtml += this.generateSheetD(lesson, acts.typeD);
-    }
+    if (this.selectedTypes.A && acts.typeA) sheetsHtml += this.generateSheetA(lesson, acts.typeA);
+    if (this.selectedTypes.B && acts.typeB) sheetsHtml += this.generateSheetB(lesson, acts.typeB);
+    if (this.selectedTypes.C && acts.typeC) sheetsHtml += this.generateSheetC(lesson, acts.typeC);
+    if (this.selectedTypes.D && acts.typeD) sheetsHtml += this.generateSheetD(lesson, acts.typeD);
 
     container.innerHTML = sheetsHtml;
   },
@@ -1640,16 +2014,11 @@ const PrintModule = {
           <div class="text-xs font-bold text-slate-500 mb-1">${escapeHtml(lesson.subject)} | ${escapeHtml(lesson.grade)} | ${escapeHtml(typeName)}</div>
           <h2 class="print-title">${escapeHtml(lesson.title)}</h2>
           <p class="text-sm mt-1">🎯 <strong>학습목표:</strong> ${escapeHtml(lesson.goal)}</p>
+          ${lesson.standards ? `<p class="text-xs text-slate-500 mt-0.5">📋 <strong>연계 성취기준:</strong> ${escapeHtml(lesson.standards)}</p>` : ''}
         </div>
         <table class="print-meta-table">
-          <tr>
-            <td>날짜</td>
-            <td>202  년   월   일</td>
-          </tr>
-          <tr>
-            <td>이름</td>
-            <td>            (인)</td>
-          </tr>
+          <tr><td>날짜</td><td>202  년   월   일</td></tr>
+          <tr><td>이름</td><td>            (인)</td></tr>
         </table>
       </div>
     `;
@@ -1767,20 +2136,17 @@ const PrintModule = {
 };
 
 // ==========================================================================
-// 13. 전역 이벤트 바인딩 & 유틸리티
+// 15. 전역 이벤트 바인딩 & 유틸리티
 // ==========================================================================
 function bindGlobalEvents() {
-  // 네비게이션 탭 클릭
   document.querySelectorAll('.nav-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => switchTab(btn.dataset.tab));
   });
 
-  // 접근성 폰트 조절 버튼
   document.querySelectorAll('.btn-font-size').forEach(btn => {
     btn.addEventListener('click', () => setFontSize(btn.dataset.size));
   });
 
-  // 고대비 토글
   const btnContrast = document.getElementById('btn-toggle-contrast');
   if (btnContrast) {
     btnContrast.addEventListener('click', () => {
@@ -1788,25 +2154,21 @@ function bindGlobalEvents() {
     });
   }
 
-  // 음소거 토글
   const btnMute = document.getElementById('btn-toggle-mute');
   if (btnMute) {
     btnMute.addEventListener('click', toggleMute);
   }
 
-  // 수업 폼 제출
   const lessonForm = document.getElementById('lesson-form');
   if (lessonForm) {
     lessonForm.addEventListener('submit', handleLessonFormSubmit);
   }
 
-  // 학생 프로필 폼 제출
   const profileForm = document.getElementById('profile-form');
   if (profileForm) {
     profileForm.addEventListener('submit', (e) => ProfileModule.saveNewProfile(e));
   }
 
-  // AI 타겟 학생 셀렉트 변경
   const aiStudentSel = document.getElementById('ai-target-student-select');
   if (aiStudentSel) {
     aiStudentSel.addEventListener('change', (e) => {
@@ -1814,7 +2176,6 @@ function bindGlobalEvents() {
     });
   }
 
-  // 인쇄 타입 체크박스
   ['A', 'B', 'C', 'D'].forEach(t => {
     const chk = document.getElementById(`print-chk-type-${t.toLowerCase()}`);
     if (chk) {
@@ -1825,7 +2186,6 @@ function bindGlobalEvents() {
     }
   });
 
-  // 키보드 접근성 네비게이션
   window.addEventListener('keydown', (e) => {
     if (AppState.player.active) {
       if (e.key === 'ArrowRight' || e.key === 'Enter') {
@@ -1843,7 +2203,6 @@ function bindGlobalEvents() {
   });
 }
 
-// 토스트 메시지 알림
 function showToast(message, type = 'info') {
   let toast = document.getElementById('app-toast');
   if (!toast) {
@@ -1873,7 +2232,6 @@ function showToast(message, type = 'info') {
   }, 3200);
 }
 
-// 문자열 이스케이프 유틸
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
@@ -1889,7 +2247,7 @@ function escapeJs(str) {
   return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, ' ');
 }
 
-// 글로벌 네임스페이스 등록
+// 전역 네임스페이스 등록
 window.switchTab = switchTab;
 window.selectCurrentLesson = selectCurrentLesson;
 window.selectAndConvertLesson = selectAndConvertLesson;
@@ -1915,6 +2273,11 @@ window.clearDrawingCanvas = clearDrawingCanvas;
 window.ProfileModule = ProfileModule;
 window.ResultModule = ResultModule;
 window.PrintModule = PrintModule;
+window.CurriculumModule = CurriculumModule;
+window.CurriculumManager = CurriculumManager;
+window.toggleInputMode = toggleInputMode;
+window.useSuggestedGoal = useSuggestedGoal;
+window.applySelectedUnitToForm = applySelectedUnitToForm;
 window.toggleMute = toggleMute;
 window.setFontSize = setFontSize;
 window.setHighContrast = setHighContrast;
